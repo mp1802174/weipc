@@ -1,0 +1,1 @@
+from .wechat_auth import WeChatAuth, LoginError 
