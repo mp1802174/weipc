@@ -12,7 +12,7 @@ if current_script_dir not in sys.path:
 # 如果是 cd WZ 然后 python main.py, '' (代表当前目录) 会在 sys.path 中，也能找到 auth
 
 # from WZ.auth import WeChatAuth, LoginError # 如果 WZ 本身是一个包
-from auth import WeChatAuth, LoginError # 从同级的 auth 包导入
+from wechat_mp_auth import WeChatAuth, LoginError # 从新的模块导入
 
 def demonstrate_login():
     """演示登录功能。"""
