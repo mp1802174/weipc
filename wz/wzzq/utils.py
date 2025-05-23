@@ -70,6 +70,28 @@ def get_current_time():
     return datetime.datetime.now()
 
 
+def save_wechat_accounts(accounts):
+    """
+    将公众号列表保存到data/name2fakeid.json
+    
+    Args:
+        accounts: 公众号名称到fakeid的映射字典
+        
+    Returns:
+        bool: 保存是否成功
+    """
+    accounts_path = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) / 'data' / 'name2fakeid.json'
+    
+    try:
+        with open(accounts_path, 'w', encoding='utf-8') as f:
+            json.dump(accounts, f, ensure_ascii=False, indent=4)
+        print(f"公众号fakeid信息已更新到 {accounts_path}")
+        return True
+    except Exception as e:
+        print(f"保存公众号列表失败: {e}")
+        return False
+
+
 # 常用的HTTP请求头
 DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',

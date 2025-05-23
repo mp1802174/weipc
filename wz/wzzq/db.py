@@ -72,6 +72,7 @@ class DatabaseManager:
             bool: 连接是否成功
         """
         try:
+            print(f"正在连接数据库: {self.config['host']}:{self.config['port']}/{self.config['database']}, 用户: {self.config['user']}")
             self.conn = mysql.connector.connect(**self.config)
             
             if not USING_PYMYSQL:
@@ -79,10 +80,65 @@ class DatabaseManager:
             else:
                 self.cursor = self.conn.cursor()
                 
+            print(f"数据库连接成功")
+            
+            # 确保wechat_articles表存在
+            self._ensure_table_exists()
+            
             return True
         except Error as e:
             print(f"数据库连接失败: {e}")
+            # 打印更详细的错误信息
+            import traceback
+            traceback.print_exc()
             return False
+            
+    def _ensure_table_exists(self):
+        """确保wechat_articles表存在，如果不存在则创建"""
+        try:
+            # 检查表是否存在
+            check_table_sql = "SHOW TABLES LIKE 'wechat_articles'"
+            self.cursor.execute(check_table_sql)
+            table_exists = self.cursor.fetchone()
+            
+            if not table_exists:
+                print("表wechat_articles不存在，正在创建...")
+                # 创建表
+                create_table_sql = """
+                CREATE TABLE IF NOT EXISTS `wechat_articles` (
+                  `id` int(11) NOT NULL AUTO_INCREMENT,
+                  `account_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '公众号名称',
+                  `title` varchar(512) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文章标题',
+                  `article_url` varchar(1024) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文章链接',
+                  `publish_timestamp` datetime NOT NULL COMMENT '文章发布时间',
+                  `source_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'wechat' COMMENT '来源类型: wechat, external_link等',
+                  `fetched_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '抓取入库时间',
+                  PRIMARY KEY (`id`),
+                  KEY `idx_account_url` (`account_name`,`article_url`(255))
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='聚合的微信文章表';
+                """
+                self.cursor.execute(create_table_sql)
+                print("表wechat_articles创建成功")
+            else:
+                print("表wechat_articles已存在，确认字段结构...")
+                # 检查必要字段是否存在
+                check_columns_sql = """
+                SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'wechat_articles'
+                """
+                self.cursor.execute(check_columns_sql, (self.config['database'],))
+                columns = [row['COLUMN_NAME'] if isinstance(row, dict) else row[0] for row in self.cursor.fetchall()]
+                
+                required_columns = ['account_name', 'title', 'article_url', 'publish_timestamp']
+                missing_columns = [col for col in required_columns if col not in columns]
+                
+                if missing_columns:
+                    print(f"警告: 表wechat_articles缺少必要字段: {', '.join(missing_columns)}")
+                else:
+                    print("表wechat_articles结构正常")
+        except Error as e:
+            print(f"检查/创建表时出错: {e}")
+            print("继续使用现有表结构...")
             
     def disconnect(self):
         """关闭数据库连接"""
@@ -100,6 +156,31 @@ class DatabaseManager:
         """上下文管理器退出"""
         self.disconnect()
         
+    def query(self, sql, params=None):
+        """
+        执行SQL查询并返回结果
+        
+        Args:
+            sql: SQL查询语句
+            params: 查询参数(元组或列表)
+            
+        Returns:
+            list: 查询结果的列表
+        """
+        try:
+            if not self.conn or not self.cursor:
+                self.connect()
+                
+            self.cursor.execute(sql, params)
+            results = self.cursor.fetchall()
+            return results
+        except Error as e:
+            print(f"查询执行失败: {e}")
+            # 打印更详细的错误信息
+            import traceback
+            traceback.print_exc()
+            return []
+            
     def save_article(self, account_name, title, article_url, publish_timestamp):
         """
         保存文章到数据库
@@ -175,12 +256,21 @@ class DatabaseManager:
         """
         success_count = 0
         
+        if not articles:
+            print("没有文章需要保存")
+            return 0
+        
+        print(f"准备批量保存 {len(articles)} 篇文章到数据库")
+        
         try:
             # 准备批量插入的SQL和参数
             insert_sql = """
             INSERT INTO wechat_articles 
             (account_name, title, article_url, publish_timestamp, source_type) 
             VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+            title = VALUES(title),
+            fetched_at = CURRENT_TIMESTAMP
             """
             
             values = []
@@ -192,10 +282,11 @@ class DatabaseManager:
                 else:
                     try:
                         # 尝试转换字符串为datetime
-                        formatted_timestamp = datetime.datetime.strptime(publish_timestamp, "%Y-%m-%d %H:%M")
+                        formatted_timestamp = datetime.datetime.strptime(str(publish_timestamp), "%Y-%m-%d %H:%M")
                     except (ValueError, TypeError):
                         # 如果转换失败，使用当前时间
                         formatted_timestamp = datetime.datetime.now()
+                        print(f"警告: 无法解析发布时间 '{publish_timestamp}'，使用当前时间")
                 
                 values.append((
                     article.get('account_name'),
@@ -206,16 +297,40 @@ class DatabaseManager:
                 ))
             
             # 批量插入
+            print(f"执行批量插入，共 {len(values)} 条记录")
             self.cursor.executemany(insert_sql, values)
             success_count = self.cursor.rowcount
             
             if not self.config.get('autocommit', False):
                 self.conn.commit()
             
+            print(f"批量保存完成，成功保存 {success_count} 篇文章")
             return success_count
             
         except Error as e:
             print(f"批量保存文章失败: {e}")
+            # 打印更详细的错误信息
+            import traceback
+            traceback.print_exc()
+            
             if not self.config.get('autocommit', False):
                 self.conn.rollback()
+            
+            # 尝试逐个保存，绕过可能有问题的记录
+            if len(articles) > 1:
+                print("尝试逐个保存文章...")
+                for article in articles:
+                    try:
+                        result = self.save_article(
+                            article.get('account_name'),
+                            article.get('title'),
+                            article.get('article_url'),
+                            article.get('publish_timestamp')
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception as e2:
+                        print(f"保存单篇文章失败: {e2}")
+                print(f"逐个保存完成，成功保存 {success_count} 篇文章")
+            
             return success_count

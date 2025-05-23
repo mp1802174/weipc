@@ -10,7 +10,7 @@ import requests
 import time
 from tqdm import tqdm
 
-from .utils import load_auth_info, load_wechat_accounts, jstime_to_datetime, DEFAULT_HEADERS
+from .utils import load_auth_info, load_wechat_accounts, jstime_to_datetime, DEFAULT_HEADERS, save_wechat_accounts
 
 
 class WechatCrawler:
@@ -80,6 +80,8 @@ class WechatCrawler:
                 if account['nickname'] == account_name:
                     # 更新缓存
                     self.accounts[account_name] = account['fakeid']
+                    # 保存更新后的accounts到文件
+                    save_wechat_accounts(self.accounts)
                     return account['fakeid']
                     
             print(f"未找到公众号: {account_name}")

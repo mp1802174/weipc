@@ -1,0 +1,10 @@
+[
+    {
+        "job_id": "crawl_job_20250523152959",
+        "start_time": "2025-05-23 15:31:00",
+        "end_time": "2025-05-23 15:31:08",
+        "success": true,
+        "message": "抓取成功，共获取8篇文章",
+        "articles_count": 0
+    }
+]

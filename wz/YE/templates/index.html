@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信公众号文章抓取</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+            padding-bottom: 40px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .btn-action {
+            margin-right: 5px;
+        }
+        .loading {
+            display: none;
+            margin-left: 10px;
+        }
+        .alert {
+            display: none;
+            margin-top: 15px;
+        }
+        .schedules-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .logs-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex flex-column align-items-center mb-4">
+            <h1 class="display-5 fw-bold">微信公众号文章抓取</h1>
+            <p class="fs-5 text-muted">抓取公众号文章并存储到数据库</p>
+        </header>
+
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>微信公众号文章抓取</h1>
+                <div>
+                    <a href="{{ url_for('view_articles') }}" class="btn btn-success me-2">
+                        <i class="bi bi-list-ul"></i> 查看最新文章
+                    </a>
+                    <a href="{{ url_for('view_logs') }}" class="btn btn-info">
+                        <i class="bi bi-clock-history"></i> 查看任务日志
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <!-- 立即抓取 -->
+                <div class="card">
+                    <div class="card-header">立即抓取</div>
+                    <div class="card-body">
+                        <form id="crawlForm">
+                            <div class="mb-3">
+                                <label for="crawlAccount" class="form-label">公众号名称 (可选)</label>
+                                <input type="text" class="form-control" id="crawlAccount" name="account" placeholder="留空表示抓取所有配置的公众号">
+                            </div>
+                            <div class="mb-3">
+                                <label for="crawlLimit" class="form-label">每个公众号抓取文章数量</label>
+                                <input type="number" class="form-control" id="crawlLimit" name="limit" value="10" min="1" max="100">
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="crawlBtn">
+                                立即抓取
+                                <span class="spinner-border spinner-border-sm loading" id="crawlLoading"></span>
+                            </button>
+                        </form>
+                        <div class="alert" id="crawlAlert"></div>
+                    </div>
+                </div>
+
+                <!-- 更新凭证 -->
+                <div class="card">
+                    <div class="card-header">更新凭证</div>
+                    <div class="card-body">
+                        <p>更新微信公众平台登录凭证，将打开浏览器并需要扫码登录。</p>
+                        <button class="btn btn-warning" id="updateCredBtn">
+                            更新凭证
+                            <span class="spinner-border spinner-border-sm loading" id="updateCredLoading"></span>
+                        </button>
+                        <div class="alert" id="updateCredAlert"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <!-- 定期抓取 -->
+                <div class="card">
+                    <div class="card-header">定期抓取</div>
+                    <div class="card-body">
+                        <form id="scheduleForm">
+                            <div class="mb-3">
+                                <label class="form-label">抓取频率</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="schedule_type" id="scheduleDaily" value="daily" checked>
+                                    <label class="form-check-label" for="scheduleDaily">每天</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="schedule_type" id="scheduleWeekly" value="weekly">
+                                    <label class="form-check-label" for="scheduleWeekly">每周</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3" id="daysSelector" style="display: none;">
+                                <label class="form-label">每周几执行</label>
+                                <div class="d-flex flex-wrap">
+                                    {% for day_num, day_name in [
+                                        (0, '周一'), (1, '周二'), (2, '周三'), 
+                                        (3, '周四'), (4, '周五'), (5, '周六'), (6, '周日')
+                                    ] %}
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" name="days" value="{{ day_num }}" id="day{{ day_num }}">
+                                        <label class="form-check-label" for="day{{ day_num }}">{{ day_name }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleTime" class="form-label">执行时间</label>
+                                <input type="time" class="form-control" id="scheduleTime" name="time" value="09:00" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleAccount" class="form-label">公众号名称 (可选)</label>
+                                <input type="text" class="form-control" id="scheduleAccount" name="account" placeholder="留空表示抓取所有配置的公众号">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleLimit" class="form-label">每个公众号抓取文章数量</label>
+                                <input type="number" class="form-control" id="scheduleLimit" name="limit" value="10" min="1" max="100">
+                            </div>
+
+                            <button type="submit" class="btn btn-success" id="scheduleBtn">
+                                设置定期抓取
+                                <span class="spinner-border spinner-border-sm loading" id="scheduleLoading"></span>
+                            </button>
+                        </form>
+                        <div class="alert" id="scheduleAlert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 已设置的定期抓取任务 -->
+        <div class="card mt-4">
+            <div class="card-header">已设置的定期抓取任务</div>
+            <div class="card-body">
+                <div class="schedules-list">
+                    {% if schedules %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>频率</th>
+                                <th>时间</th>
+                                <th>公众号</th>
+                                <th>文章数量</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for schedule in schedules %}
+                            <tr>
+                                <td>
+                                    {% if schedule.type == 'daily' %}
+                                        每天
+                                    {% elif schedule.type == 'weekly' %}
+                                        每周
+                                        {% for day in schedule.days %}
+                                            {% if day == 0 %}一{% endif %}
+                                            {% if day == 1 %}二{% endif %}
+                                            {% if day == 2 %}三{% endif %}
+                                            {% if day == 3 %}四{% endif %}
+                                            {% if day == 4 %}五{% endif %}
+                                            {% if day == 5 %}六{% endif %}
+                                            {% if day == 6 %}日{% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ schedule.time }}</td>
+                                <td>{{ schedule.account or '全部' }}</td>
+                                <td>{{ schedule.limit }}</td>
+                                <td>{{ schedule.created_at }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-schedule" data-id="{{ schedule.id }}">删除</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">暂无定期抓取任务</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近任务执行记录 -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>最近任务执行记录</span>
+                <a href="{{ url_for('view_logs') }}" class="btn btn-sm btn-outline-secondary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="logs-list">
+                    {% if job_logs %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>开始时间</th>
+                                <th>结束时间</th>
+                                <th>状态</th>
+                                <th>结果</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in job_logs %}
+                            <tr>
+                                <td>{{ log.start_time }}</td>
+                                <td>{{ log.end_time }}</td>
+                                <td>
+                                    {% if log.success %}
+                                    <span class="badge bg-success">成功</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">失败</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.message }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">暂无任务执行记录</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 切换每周选择器显示
+            $('input[name="schedule_type"]').change(function() {
+                if ($(this).val() === 'weekly') {
+                    $('#daysSelector').show();
+                } else {
+                    $('#daysSelector').hide();
+                }
+            });
+
+            // 立即抓取
+            $('#crawlForm').submit(function(e) {
+                e.preventDefault();
+                const $btn = $('#crawlBtn');
+                const $loading = $('#crawlLoading');
+                const $alert = $('#crawlAlert');
+                
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+
+                $.ajax({
+                    url: '/crawl',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .html(response.message)
+                              .show();
+                    },
+                    error: function() {
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text('请求失败，请检查网络连接')
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                    }
+                });
+            });
+
+            // 更新凭证
+            $('#updateCredBtn').click(function() {
+                const $btn = $(this);
+                const $loading = $('#updateCredLoading');
+                const $alert = $('#updateCredAlert');
+                
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+
+                $.ajax({
+                    url: '/update_credentials',
+                    type: 'POST',
+                    success: function(response) {
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .text(response.message)
+                              .show();
+                    },
+                    error: function() {
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text('请求失败，请检查网络连接')
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                    }
+                });
+            });
+
+            // 设置定期抓取
+            $('#scheduleForm').submit(function(e) {
+                e.preventDefault();
+                const $btn = $('#scheduleBtn');
+                const $loading = $('#scheduleLoading');
+                const $alert = $('#scheduleAlert');
+                
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+
+                $.ajax({
+                    url: '/schedule',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .text(response.message)
+                              .show();
+                        
+                        if (response.success) {
+                            // 刷新页面以显示新增的任务
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function() {
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text('请求失败，请检查网络连接')
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                    }
+                });
+            });
+
+            // 删除定期抓取任务
+            $('.delete-schedule').click(function() {
+                if (!confirm('确定要删除这个定期抓取任务吗？')) {
+                    return;
+                }
+                
+                const $btn = $(this);
+                $btn.prop('disabled', true).text('删除中...');
+                
+                $.ajax({
+                    url: '/delete_schedule',
+                    type: 'POST',
+                    data: { job_id: $btn.data('id') },
+                    success: function(response) {
+                        if (response.success) {
+                            // 刷新页面以更新任务列表
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                            $btn.prop('disabled', false).text('删除');
+                        }
+                    },
+                    error: function() {
+                        alert('请求失败，请检查网络连接');
+                        $btn.prop('disabled', false).text('删除');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
