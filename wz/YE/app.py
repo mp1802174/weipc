@@ -103,42 +103,145 @@ def run_crawler(account=None, limit=10):
         limit: 每个公众号抓取的文章数量
     
     Returns:
-        tuple: (成功标志, 结果消息, 文章列表)
+        tuple: (成功标志, 结果消息, 文章列表, 额外信息)
     """
     logger.info("开始抓取文章")
     
+    # 1. 准备命令
     crawler_script = os.path.join(WZ_DIR, 'crawl_wechat.py')
-    cmd = [sys.executable, crawler_script]
+    cmd_list = [sys.executable, crawler_script]
     
     if account:
-        cmd.extend(['--account', account])
+        cmd_list.extend(['--account', account])
     
-    cmd.extend(['--limit', str(limit)])
+    cmd_list.extend(['--limit', str(limit)])
     
+    # 2. 执行子进程
+    process_result = None
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=WZ_DIR)
+        logger.info(f"执行命令: {' '.join(cmd_list)}")
+        process_result = subprocess.run(
+            cmd_list, 
+            capture_output=True, 
+            text=True, 
+            cwd=WZ_DIR, 
+            encoding='utf-8'
+        )
+    except Exception as process_err:
+        logger.error(f"执行子进程时发生异常: {process_err}", exc_info=True)
+        return False, f"执行抓取脚本时发生错误: {str(process_err)}", [], {"error_type": "SUBPROCESS_ERROR"}
+    
+    # 3. 检查子进程对象是否有效
+    if process_result is None:
+        logger.critical("subprocess.run 返回了 None，这是异常情况！")
+        return False, "执行抓取脚本时内部错误 (subprocess返回None)", [], {"error_type": "INTERNAL_ERROR"}
+    
+    # 4. 安全获取子进程输出
+    try:
+        exit_code = process_result.returncode
+        output_text = "" if process_result.stdout is None else process_result.stdout
+        error_text = "" if process_result.stderr is None else process_result.stderr
         
-        if result.returncode == 0:
-            output = result.stdout
-            # 尝试从输出中提取抓取到的文章数量
-            articles_count = 0
-            for line in output.splitlines():
-                if "共抓取到" in line and "篇文章" in line:
-                    try:
-                        articles_count = int(line.split("共抓取到")[1].split("篇文章")[0].strip())
-                    except (ValueError, IndexError):
-                        pass
-                    break
-            
-            # 获取最近抓取的文章明细
-            articles = []
+        # 记录子进程信息（简化版本）
+        logger.info(f"子进程完成，退出码: {exit_code}")
+        if output_text:
+            logger.debug(f"子进程输出 (前500字符): {output_text[:500]}")
+        if error_text:
+            logger.debug(f"子进程错误 (前500字符): {error_text[:500]}")
+    except Exception as extract_err:
+        logger.error(f"提取子进程结果时发生异常: {extract_err}", exc_info=True)
+        return False, "处理子进程结果时发生错误", [], {"error_type": "RESULT_PROCESSING_ERROR"}
+    
+    # 5. 基于退出码处理特定情况
+    try:
+        # 5.1 凭证失效情况
+        credential_expired = False
+        if exit_code == 2:
+            credential_expired = True
+        else:
+            # 安全检查输出中是否包含特定标记
             try:
-                # 尝试从数据库获取最近抓取的文章明细
-                from wzzq.db import DatabaseManager
-                db = DatabaseManager()
+                if output_text and "CREDENTIALS_EXPIRED_FLAG" in output_text:
+                    credential_expired = True
+            except Exception as text_check_err:
+                logger.error(f"检查输出文本时发生异常: {text_check_err}", exc_info=True)
+        
+        if credential_expired:
+            logger.warning("检测到微信凭证已失效 (来自抓取脚本)。")
+            return False, '微信凭证已失效，请点击"更新凭证"按钮重新扫码登录。', [], {"error_type": "CREDENTIALS_EXPIRED"}
+        
+        # 5.2 频率限制情况
+        if exit_code == 3:
+            logger.warning("抓取脚本报告请求频率过快。")
+            error_details = error_text or output_text
+            error_details_clean = "\n".join([
+                line for line in error_details.splitlines() 
+                if "CREDENTIALS_EXPIRED_FLAG" not in line
+            ])
+            return False, f'抓取请求过于频繁，请稍后再试。详情: {error_details_clean.strip()}', [], {"error_type": "RATE_LIMITED"}
+        
+        # 5.3 成功情况
+        if exit_code == 0:
+            return process_success_case(output_text, error_text)
+        
+        # 5.4 其他错误情况
+        error_msg = error_text or output_text or "未知子进程错误"
+        error_msg_clean = "\n".join([
+            line for line in error_msg.splitlines() 
+            if "CREDENTIALS_EXPIRED_FLAG" not in line
+        ])
+        logger.error(f"抓取脚本执行失败 (退出码: {exit_code}): {error_msg_clean.strip()}")
+        return False, f'抓取失败: {error_msg_clean.strip()}', [], {"error_type": "CRAWLER_SCRIPT_FAILED", "exit_code": exit_code}
+    
+    except Exception as logic_err:
+        logger.error(f"处理子进程结果逻辑时发生异常: {logic_err}", exc_info=True)
+        return False, f"处理抓取结果时发生内部错误: {str(logic_err)}", [], {"error_type": "PROCESSING_ERROR"}
+
+def process_success_case(output_text, error_text):
+    """处理子进程成功执行的情况，解析文章数量和获取数据库结果"""
+    try:
+        logger.info("抓取脚本成功执行。")
+        
+        # 解析文章数量
+        articles_count = 0
+        for line in output_text.splitlines():
+            if "共抓取到" in line and "篇文章" in line:
+                try:
+                    articles_count = int(line.split("共抓取到")[1].split("篇文章")[0].strip())
+                    logger.info(f"从脚本输出解析到的文章数量: {articles_count}")
+                    break
+                except (ValueError, IndexError) as parse_err:
+                    logger.warning(f"解析文章数量失败: {parse_err}. Line: '{line}'")
+        
+        # 从数据库获取文章明细 - 无论抓取脚本是否报告有新文章，都尝试获取最新的文章
+        # 因为可能存在脚本成功入库但未在输出中正确报告的情况
+        article_list = []
+        try:
+            from wzzq.db import DatabaseManager
+            db = DatabaseManager()
+            
+            # 查询最近15分钟内入库的文章，或者至少返回最新的30条记录
+            current_time = datetime.datetime.now()
+            fifteen_minutes_ago = current_time - datetime.timedelta(minutes=15)
+            
+            # 先尝试查询最近15分钟内的文章
+            recent_query = """
+            SELECT a.id, a.title, a.article_url as link, a.publish_timestamp as publish_time, 
+                   a.account_name as author, a.fetched_at as update_time,
+                   NULL as cover_url
+            FROM wechat_articles a
+            WHERE a.fetched_at >= %s
+            ORDER BY a.fetched_at DESC
+            """
+            
+            recent_results = db.query(recent_query, (fifteen_minutes_ago.strftime('%Y-%m-%d %H:%M:%S'),))
+            
+            # 如果最近15分钟内没有新文章，则获取最新的30篇
+            if not recent_results or len(recent_results) == 0:
+                logger.info("最近15分钟内没有新文章，获取最新的30篇文章")
+                query_limit = max(30, articles_count) if articles_count > 0 else 30
                 
-                # 查询最近抓取的文章
-                query = """
+                fallback_query = """
                 SELECT a.id, a.title, a.article_url as link, a.publish_timestamp as publish_time, 
                        a.account_name as author, a.fetched_at as update_time,
                        NULL as cover_url
@@ -146,33 +249,48 @@ def run_crawler(account=None, limit=10):
                 ORDER BY a.fetched_at DESC
                 LIMIT %s
                 """
-                articles = db.query(query, (max(30, articles_count),))
                 
-                # 格式化日期时间
-                for article in articles:
-                    if isinstance(article['publish_time'], datetime.datetime):
-                        article['publish_time'] = article['publish_time'].strftime("%Y-%m-%d %H:%M:%S")
-                    if isinstance(article['update_time'], datetime.datetime):
-                        article['update_time'] = article['update_time'].strftime("%Y-%m-%d %H:%M:%S")
-                
-            except Exception as e:
-                logger.error(f"获取文章明细失败: {e}")
-            
-            if articles_count > 0:
-                message = f"抓取成功，共获取{articles_count}篇文章"
+                query_results = db.query(fallback_query, (query_limit,))
+                if query_results is None:
+                    logger.warning("数据库查询返回None，将使用空列表")
+                    article_list = []
+                else:
+                    article_list = query_results
+                    logger.info(f"从数据库查询到 {len(article_list)} 篇最新文章")
             else:
-                message = "抓取成功，但未获取到新文章"
-                
-            logger.info(message)
-            return True, message, articles
+                # 使用最近15分钟内的文章
+                article_list = recent_results
+                logger.info(f"从数据库查询到 {len(article_list)} 篇最近15分钟内的新文章")
+            
+            # 处理日期时间字段
+            for article in article_list:
+                if isinstance(article.get('publish_time'), datetime.datetime):
+                    article['publish_time'] = article['publish_time'].strftime("%Y-%m-%d %H:%M:%S")
+                if isinstance(article.get('update_time'), datetime.datetime):
+                    article['update_time'] = article['update_time'].strftime("%Y-%m-%d %H:%M:%S")
+            
+        except Exception as db_err:
+            logger.error(f"从数据库获取文章明细失败: {db_err}", exc_info=True)
+            article_list = []
+        
+        # 生成结果消息
+        if len(article_list) > 0:
+            if articles_count > 0:
+                result_msg = f"抓取成功，脚本报告获取{articles_count}篇文章，数据库返回{len(article_list)}篇明细。"
+            else:
+                result_msg = f"抓取成功，数据库返回{len(article_list)}篇最近的文章。"
         else:
-            error_msg = result.stderr or "未知错误"
-            logger.error(f"抓取失败: {error_msg}")
-            return False, f"抓取失败: {error_msg}", []
-    
-    except Exception as e:
-        logger.error(f"执行抓取脚本时发生异常: {e}")
-        return False, f"执行抓取脚本时发生异常: {e}", []
+            if articles_count > 0:
+                result_msg = f"抓取成功，脚本报告获取{articles_count}篇文章，但无法从数据库获取明细。"
+            else:
+                result_msg = "抓取成功，但未获取到新文章。"
+            
+        logger.info(f"最终消息: {result_msg}")
+        return True, result_msg, article_list, None
+        
+    except Exception as success_err:
+        logger.error(f"处理成功案例时发生异常: {success_err}", exc_info=True)
+        return True, "抓取似乎成功，但处理结果时出错", [], {"error_type": "RESULT_PARSING_ERROR"}
 
 def update_credentials():
     """
@@ -216,19 +334,15 @@ def schedule_crawler_job(job_id, schedule_type, days, time, account=None, limit=
         bool: 是否成功调度
     """
     try:
-        # 解析时间
         hour, minute = map(int, time.split(':'))
         
-        # 创建触发器
         if schedule_type == 'daily':
             trigger = CronTrigger(hour=hour, minute=minute)
             description = f"每天 {time}"
         elif schedule_type == 'weekly':
-            # 转换days为数字列表
             if isinstance(days, str):
                 days = [int(d) for d in days.split(',')]
             
-            # 将0-6（周一到周日）转换为1-7（APScheduler的day_of_week格式）
             dow = [d+1 for d in days]
             day_names = ['一', '二', '三', '四', '五', '六', '日']
             selected_days = [day_names[d] for d in days]
@@ -238,22 +352,23 @@ def schedule_crawler_job(job_id, schedule_type, days, time, account=None, limit=
         else:
             return False
         
-        # 创建任务函数（带参数的闭包）
         def job_func():
             job_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             logger.info(f"开始执行计划任务 {job_id}: {description}")
             
-            # 执行爬虫
-            success, message, articles = run_crawler(account, limit)
+            success, message, articles, extra_info = run_crawler(account, limit)
             
-            # 生成任务结果信息
             result_message = message
-            if success and len(articles) > 0:
+            if success and articles and len(articles) > 0:
                 result_message += f"，最新文章可在查看文章页面查看"
+            
+            # 记录额外的错误信息（如果有）
+            if extra_info and isinstance(extra_info, dict) and 'error_type' in extra_info:
+                error_type = extra_info['error_type']
+                logger.info(f"计划任务 {job_id} 返回的错误类型: {error_type}")
             
             logger.info(f"计划任务 {job_id} 执行完成: {result_message}")
             
-            # 记录任务执行记录
             job_logs = load_job_logs()
             job_logs.append({
                 'job_id': job_id,
@@ -261,11 +376,11 @@ def schedule_crawler_job(job_id, schedule_type, days, time, account=None, limit=
                 'end_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'success': success,
                 'message': result_message,
-                'articles_count': len(articles) if success else 0
+                'articles_count': len(articles) if success and articles else 0,
+                'error_type': extra_info.get('error_type') if extra_info and isinstance(extra_info, dict) else None
             })
-            save_job_logs(job_logs[-100:])  # 只保留最近100条记录
+            save_job_logs(job_logs[-100:])
         
-        # 添加任务到调度器
         scheduler.add_job(
             job_func, 
             trigger=trigger, 
@@ -309,22 +424,26 @@ def save_job_logs(logs):
 def index():
     """首页"""
     schedules = load_schedule_config()
-    job_logs = load_job_logs()[-10:]  # 最近10条记录
+    job_logs = load_job_logs()[-10:]
     return render_template('index.html', schedules=schedules, job_logs=job_logs)
 
 @app.route('/crawl', methods=['POST'])
 def crawl():
     """立即抓取文章"""
-    account = request.form.get('account', None)
-    limit = int(request.form.get('limit', 10))
+    account_name = request.form.get('account_name')
+    limit = request.form.get('limit', default=10, type=int)
     
-    success, message, articles = run_crawler(account, limit)
+    success, message, articles, extra_info = run_crawler(account_name, limit)
     
-    if success and len(articles) > 0:
-        # 如果成功抓取且有文章，添加查看链接
-        message += f"，<a href='{url_for('view_articles')}'>点击查看最新文章</a>"
+    response_data = {
+        'success': success,
+        'message': message,
+        'articles': articles if articles else []
+    }
+    if extra_info and isinstance(extra_info, dict) and 'error_type' in extra_info:
+        response_data['error_type'] = extra_info['error_type']
     
-    return jsonify({'success': success, 'message': message})
+    return jsonify(response_data)
 
 @app.route('/update_credentials', methods=['POST'])
 def update_cred():
@@ -344,18 +463,14 @@ def schedule():
     if not schedule_type or not time:
         return jsonify({'success': False, 'message': '缺少必要参数'})
     
-    # 如果是每周模式，但未选择任何日期
     if schedule_type == 'weekly' and not days:
         return jsonify({'success': False, 'message': '请选择每周执行的日期'})
     
-    # 生成任务ID
     job_id = f"crawl_job_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
     
-    # 添加到调度器
     success = schedule_crawler_job(job_id, schedule_type, days, time, account, limit)
     
     if success:
-        # 保存到配置文件
         schedules = load_schedule_config()
         schedules.append({
             'id': job_id,
@@ -380,13 +495,11 @@ def delete_schedule():
     if not job_id:
         return jsonify({'success': False, 'message': '缺少任务ID'})
     
-    # 从调度器中移除
     try:
         scheduler.remove_job(job_id)
     except Exception as e:
         logger.error(f"从调度器中移除任务失败: {e}")
     
-    # 从配置文件中移除
     schedules = load_schedule_config()
     schedules = [s for s in schedules if s.get('id') != job_id]
     save_schedule_config(schedules)
@@ -403,14 +516,11 @@ def view_logs():
 def view_articles():
     """查看最新抓取的文章"""
     try:
-        # 从数据库获取最新抓取的文章
         from wzzq.db import DatabaseManager
         db = DatabaseManager()
         
-        # 默认显示最近100篇文章
         limit = request.args.get('limit', 100, type=int)
         
-        # 可选按公众号筛选
         account = request.args.get('account', None)
         
         if account:
@@ -435,7 +545,6 @@ def view_articles():
             """
             articles = db.query(query, (limit,))
         
-        # 格式化日期时间
         for article in articles:
             if isinstance(article['publish_time'], datetime.datetime):
                 article['publish_time'] = article['publish_time'].strftime("%Y-%m-%d %H:%M:%S")
@@ -449,24 +558,38 @@ def view_articles():
         return render_template('error.html', error_message=f"获取文章列表失败: {e}")
 
 def init_scheduler():
-    """初始化调度器，加载已保存的任务"""
+    """初始化调度器并加载所有计划任务"""
     schedules = load_schedule_config()
-    
-    for schedule in schedules:
-        job_id = schedule.get('id')
-        schedule_type = schedule.get('type')
-        days = schedule.get('days')
-        time = schedule.get('time')
-        account = schedule.get('account')
-        limit = schedule.get('limit', 10)
-        
-        schedule_crawler_job(job_id, schedule_type, days, time, account, limit)
-    
-    # 启动调度器
-    scheduler.start()
-    logger.info("调度器已启动")
+    active_jobs = {job.id: job for job in scheduler.get_jobs()}
 
-# 初始化调度器
+    for config in schedules:
+        job_id = config.get('id')
+        if job_id in active_jobs:
+            logger.info(f"任务 {job_id} 已在调度中，跳过重复添加。")
+            continue
+
+        schedule_type = config.get('schedule_type')
+        days = config.get('days')
+        time_str = config.get('time') # 使用 time_str 避免与 time 模块冲突
+        account = config.get('account')
+        limit = config.get('limit', 10)
+        
+        if not all([job_id, schedule_type, time_str]):
+            logger.warning(f"跳过无效的计划任务配置（缺少id, type或time）: {config}")
+            continue
+            
+        try:
+            schedule_crawler_job(job_id, schedule_type, days, time_str, account, limit)
+        except Exception as e:
+            logger.error(f"添加计划任务 {job_id} 到调度器时失败: {e}", exc_info=True)
+
+    # 不在此处启动调度器
+    if not scheduler.running:
+        logger.info("调度器已配置作业，等待从主启动脚本启动。")
+    else:
+        logger.info("调度器已在运行中 (可能由重载器或其他方式启动)。")
+
+# 在模块末尾调用以配置作业，但不启动调度器
 init_scheduler()
 
 if __name__ == '__main__':
