@@ -1,0 +1,29 @@
+2025-05-31 15:32:34,570 - __main__ - INFO - 开始测试CFCJ修复...
+2025-05-31 15:32:34,579 - cfcj.auth - INFO - 认证数据加载成功
+2025-05-31 15:32:34,582 - __main__ - INFO - 测试URL: https://linux.do/t/topic/690688/48
+2025-05-31 15:32:34,582 - __main__ - INFO - 注意观察浏览器是否还会反复刷新页面...
+2025-05-31 15:32:34,582 - cfcj.api - INFO - 开始采集文章: https://linux.do/t/topic/690688/48
+2025-05-31 15:32:34,586 - cfcj.crawler - INFO - 启动浏览器，使用驱动: drission
+2025-05-31 15:32:34,588 - cfcj.crawler - INFO - 正在配置Chrome选项...
+2025-05-31 15:32:34,594 - cfcj.crawler - INFO - 正在启动Chrome浏览器...
+2025-05-31 15:32:36,565 - cfcj.crawler - INFO - Chrome浏览器启动成功
+2025-05-31 15:32:36,621 - cfcj.crawler - INFO - 正在加载保存的cookies...
+2025-05-31 15:32:36,675 - cfcj.crawler - INFO - Cookies加载准备完成
+2025-05-31 15:32:36,683 - cfcj.crawler - INFO - 正在访问: https://linux.do/t/topic/690688/48 (尝试 1/1)
+2025-05-31 15:32:36,686 - cfcj.crawler - INFO - 正在访问页面: https://linux.do/t/topic/690688/48
+2025-05-31 15:32:52,142 - cfcj.auth - INFO - Cookies加载到页面完成，共加载 16 个cookies
+2025-05-31 15:32:57,637 - cfcj.crawler - INFO - 页面访问成功，正在检查Cloudflare...
+2025-05-31 15:32:57,640 - cfcj.crawler - INFO - 检查Cloudflare验证状态...
+2025-05-31 15:33:05,672 - cfcj.crawler - INFO - 未检测到Cloudflare验证页面
+2025-05-31 15:33:09,684 - cfcj.crawler - INFO - 等待页面加载完成 (2秒)...
+2025-05-31 15:33:12,890 - cfcj.crawler - INFO - 页面内容获取成功，长度: 1133083 字符
+2025-05-31 15:33:15,315 - cfcj.api - INFO - 文章采集成功: 新学校，各位试一下
+2025-05-31 15:33:15,329 - cfcj.auth - INFO - 认证数据保存成功
+2025-05-31 15:33:15,331 - cfcj.auth - INFO - 从页面保存cookies完成
+2025-05-31 15:33:16,388 - cfcj.crawler - INFO - 浏览器已关闭
+2025-05-31 15:33:16,392 - __main__ - INFO - 测试完成! 耗时: 41.81秒
+2025-05-31 15:33:16,393 - __main__ - INFO - 标题: 新学校，各位试一下
+2025-05-31 15:33:16,393 - __main__ - INFO - 作者: 
+2025-05-31 15:33:16,394 - __main__ - INFO - 发布时间: 
+2025-05-31 15:33:16,394 - __main__ - INFO - 内容长度: 514 字符
+2025-05-31 15:33:16,398 - __main__ - INFO - 结果已保存到: D:\kf\weipc\wz\cfcj\test_fix_result.json
