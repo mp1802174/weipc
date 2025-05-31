@@ -132,5 +132,4 @@ Data persistence is primarily implemented through JSON files.
 
 The daily_update.sh indicates the project supports scheduled automatic updates.
 
----
-来自 Perplexity 的回答: pplx.ai/share
+
