@@ -82,9 +82,16 @@ class CFCJAPI:
             
             # 提取文章数据
             article_data = self.extractor.extract_article(html_content, url)
-            
-            self.logger.info(f"文章采集成功: {article_data.get('title', 'Unknown')}")
-            return article_data
+
+            # 简化返回结果，只保留核心字段
+            core_result = {
+                "url": article_data.get('url', url),
+                "title": article_data.get('title', ''),
+                "content": article_data.get('content', '')
+            }
+
+            self.logger.info(f"文章采集成功: {core_result.get('title', 'Unknown')}")
+            return core_result
             
         except Exception as e:
             self.logger.error(f"采集文章失败: {e}")

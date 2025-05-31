@@ -351,53 +351,30 @@ class ContentExtractor:
         return ""
 
     def _extract_linux_do_content(self, soup: BeautifulSoup) -> str:
-        """提取linux.do网站的主贴内容"""
-        self.logger.debug("开始提取linux.do主贴内容")
+        """提取linux.do网站的主贴内容 - 精确定位，只提取核心内容"""
+        self.logger.debug("开始提取linux.do主贴核心内容")
 
-        # 首先找到主贴容器
-        main_post_selector = self.config.get('extraction.linux_do.main_post_selector', '#post_1')
-        main_post = soup.select_one(main_post_selector)
+        # 首先移除所有回复帖子和无关元素
+        self._remove_replies_and_navigation(soup)
 
-        if not main_post:
-            self.logger.warning("未找到主贴容器，尝试备用选择器")
-            # 备用选择器
-            backup_selectors = [
-                '#post_1',
-                '.topic-post:first-child',
-                '[data-post-number="1"]',
-                '.post-stream .topic-post:first-child'
-            ]
-
-            for selector in backup_selectors:
-                main_post = soup.select_one(selector)
-                if main_post:
-                    self.logger.debug(f"使用备用选择器找到主贴: {selector}")
-                    break
+        # 找到主贴容器 - 使用更精确的选择器
+        main_post = self._find_main_post(soup)
 
         if not main_post:
             self.logger.error("无法找到主贴容器")
-            return self._extract_main_content(soup)
+            return ""
 
-        self.logger.debug("找到主贴容器，开始提取内容")
+        self.logger.debug("找到主贴容器，开始提取核心内容")
 
-        # 在主贴容器中移除无关元素
-        self._remove_unwanted_elements_from_post(main_post)
+        # 在主贴中查找.cooked内容（这是主要内容区域）
+        content_element = main_post.select_one('.cooked')
 
-        # 在主贴中查找内容 - 使用原始内容提取
-        content_selectors = self.config.get('extraction.linux_do.content_selectors', ['.cooked'])
+        if not content_element:
+            self.logger.warning("未找到.cooked内容区域")
+            return ""
 
-        for selector in content_selectors:
-            content_element = main_post.select_one(selector)
-            if content_element:
-                self.logger.debug(f"使用选择器找到内容: {selector}")
-                # 使用原始内容提取，保持所有元素
-                raw_content = self._extract_raw_linux_do_content(content_element)
-                if raw_content:
-                    return raw_content
-
-        # 如果没有找到特定内容，提取主贴的所有原始内容
-        self.logger.warning("未找到特定内容选择器，提取主贴所有原始内容")
-        return self._extract_raw_linux_do_content(main_post)
+        # 提取纯净的主贴内容
+        return self._extract_pure_main_content(content_element)
 
     def _remove_unwanted_elements(self, soup: BeautifulSoup) -> None:
         """移除linux.do页面中的无关元素"""
@@ -488,6 +465,88 @@ class ContentExtractor:
 
         # 使用原始内容提取，保持HTML结构
         return self._extract_raw_content(element_copy)
+
+    def _remove_replies_and_navigation(self, soup: BeautifulSoup) -> None:
+        """移除所有回复帖子和导航元素"""
+        # 移除所有非第一个帖子（即回复）
+        reply_selectors = [
+            '.topic-post:not(:first-child)',
+            '[data-post-number]:not([data-post-number="1"])',
+            '.post-stream .topic-post:not(:first-child)'
+        ]
+
+        for selector in reply_selectors:
+            for element in soup.select(selector):
+                element.decompose()
+
+        # 移除导航和UI元素
+        navigation_selectors = [
+            '.topic-navigation',
+            '.topic-map',
+            '.suggested-topics',
+            '.topic-footer-buttons',
+            '.timeline-container',
+            '.topic-timeline',
+            '.progress-wrapper',
+            '.topic-footer-main-buttons',
+            '.suggested-topics-wrapper',
+            '.more-topics',
+            '.nav',
+            '.header',
+            '.footer',
+            '.sidebar'
+        ]
+
+        for selector in navigation_selectors:
+            for element in soup.select(selector):
+                element.decompose()
+
+    def _find_main_post(self, soup: BeautifulSoup):
+        """精确找到主贴容器"""
+        # 按优先级尝试不同的选择器
+        main_post_selectors = [
+            '#post_1',
+            '[data-post-number="1"]',
+            '.topic-post:first-child',
+            '.post-stream .topic-post:first-child'
+        ]
+
+        for selector in main_post_selectors:
+            main_post = soup.select_one(selector)
+            if main_post:
+                self.logger.debug(f"使用选择器找到主贴: {selector}")
+                return main_post
+
+        return None
+
+    def _extract_pure_main_content(self, content_element) -> str:
+        """提取纯净的主贴内容，保持原始格式"""
+        # 创建副本避免修改原始元素
+        import copy
+        element_copy = copy.deepcopy(content_element)
+
+        # 只移除控制元素，保留所有内容元素
+        control_selectors = [
+            '.quote-controls',
+            '.post-controls',
+            '.user-card',
+            '.avatar',
+            '.user-info',
+            '.names',
+            '.username',
+            '.user-title',
+            '.post-date',
+            '.post-number',
+            '.controls',
+            '.actions'
+        ]
+
+        for selector in control_selectors:
+            for element in element_copy.select(selector):
+                element.decompose()
+
+        # 返回完整的HTML内容，包括所有文字、图片、链接、代码等
+        return str(element_copy)
 
     def _extract_linux_do_specific(self, soup: BeautifulSoup) -> Dict[str, Any]:
         """针对linux.do网站的特殊提取逻辑"""
