@@ -173,47 +173,105 @@ class AuthManager:
                        submit_selector: str) -> bool:
         """使用DrissionPage进行登录"""
         try:
-            # 首先检查是否已经登录
-            if self._check_login_success_drission(page):
+            # 等待页面完全加载
+            time.sleep(3)
+
+            # 首先严格检查是否已经登录（使用更严格的检查）
+            if self._check_login_success_strict(page):
                 self.logger.info("检测到已经登录，跳过登录过程")
                 self.save_cookies_from_page(page)
                 return True
 
-            # 检查是否在登录页面
-            username_element = page.ele(username_selector, timeout=2)
+            # 检查是否在登录页面，增加等待时间
+            self.logger.info("正在查找登录表单...")
+            username_element = page.ele(username_selector, timeout=5)
             if not username_element:
-                # 可能已经登录或者不在登录页面
-                self.logger.info("未找到登录表单，可能已经登录")
-                if self._check_login_success_drission(page):
-                    self.save_cookies_from_page(page)
-                    return True
-                else:
-                    raise AuthenticationError("找不到用户名输入框且未检测到登录状态")
+                # 尝试其他常见的用户名选择器
+                alternative_selectors = [
+                    '#login-account-name',
+                    'input[name="login"]',
+                    'input[name="username"]',
+                    'input[name="email"]',
+                    '.login-form input[type="text"]',
+                    '.login-form input[type="email"]'
+                ]
+
+                for alt_selector in alternative_selectors:
+                    username_element = page.ele(alt_selector, timeout=2)
+                    if username_element:
+                        self.logger.info(f"使用备用选择器找到用户名输入框: {alt_selector}")
+                        break
+
+                if not username_element:
+                    # 再次检查是否已经登录
+                    if self._check_login_success_strict(page):
+                        self.logger.info("未找到登录表单，但检测到已登录状态")
+                        self.save_cookies_from_page(page)
+                        return True
+                    else:
+                        raise AuthenticationError("找不到用户名输入框且未检测到登录状态")
 
             # 填写用户名
+            self.logger.info("正在填写用户名...")
             username_element.clear()
             username_element.input(username)
 
             # 填写密码
-            password_element = page.ele(password_selector, timeout=2)
-            if password_element:
-                password_element.clear()
-                password_element.input(password)
-            else:
-                raise AuthenticationError("找不到密码输入框")
+            self.logger.info("正在查找密码输入框...")
+            password_element = page.ele(password_selector, timeout=5)
+            if not password_element:
+                # 尝试其他常见的密码选择器
+                alternative_password_selectors = [
+                    '#login-account-password',
+                    'input[name="password"]',
+                    'input[type="password"]',
+                    '.login-form input[type="password"]'
+                ]
+
+                for alt_selector in alternative_password_selectors:
+                    password_element = page.ele(alt_selector, timeout=2)
+                    if password_element:
+                        self.logger.info(f"使用备用选择器找到密码输入框: {alt_selector}")
+                        break
+
+                if not password_element:
+                    raise AuthenticationError("找不到密码输入框")
+
+            self.logger.info("正在填写密码...")
+            password_element.clear()
+            password_element.input(password)
 
             # 点击登录按钮
-            submit_element = page.ele(submit_selector, timeout=2)
-            if submit_element:
-                submit_element.click()
-            else:
-                raise AuthenticationError("找不到登录按钮")
+            self.logger.info("正在查找登录按钮...")
+            submit_element = page.ele(submit_selector, timeout=5)
+            if not submit_element:
+                # 尝试其他常见的提交按钮选择器
+                alternative_submit_selectors = [
+                    '#login-button',
+                    'button[type="submit"]',
+                    '.login-form button',
+                    '.btn-primary',
+                    'input[type="submit"]'
+                ]
+
+                for alt_selector in alternative_submit_selectors:
+                    submit_element = page.ele(alt_selector, timeout=2)
+                    if submit_element:
+                        self.logger.info(f"使用备用选择器找到登录按钮: {alt_selector}")
+                        break
+
+                if not submit_element:
+                    raise AuthenticationError("找不到登录按钮")
+
+            self.logger.info("正在点击登录按钮...")
+            submit_element.click()
 
             # 等待登录完成
-            time.sleep(5)
+            self.logger.info("等待登录完成...")
+            time.sleep(8)
 
             # 检查登录是否成功
-            if self._check_login_success_drission(page):
+            if self._check_login_success_strict(page):
                 self.save_cookies_from_page(page)
                 self.logger.info("登录成功")
                 return True
@@ -223,7 +281,7 @@ class AuthManager:
 
         except Exception as e:
             # 如果登录过程出错，检查是否实际上已经登录了
-            if self._check_login_success_drission(page):
+            if self._check_login_success_strict(page):
                 self.logger.info("登录过程出错，但检测到已登录状态")
                 self.save_cookies_from_page(page)
                 return True
@@ -253,81 +311,62 @@ class AuthManager:
         
         return False
     
-    def _check_login_success_drission(self, page) -> bool:
-        """检查DrissionPage登录是否成功"""
+    def _check_login_success_strict(self, page) -> bool:
+        """严格检查DrissionPage登录是否成功"""
         try:
-            # 检查URL变化
             current_url = page.url
-            if 'login' not in current_url.lower():
-                self.logger.debug(f"URL不包含login，可能已登录: {current_url}")
+            self.logger.debug(f"检查登录状态，当前URL: {current_url}")
 
-            # Linux.do特定的登录成功标志
+            # Linux.do特定的登录成功标志（更严格的检查）
             linux_do_indicators = [
                 '.header-dropdown-toggle',  # 用户头像下拉菜单
                 '.current-user',            # 当前用户信息
                 '.user-menu',               # 用户菜单
-                '.d-header-icons .icon',    # 头部图标
                 '[data-user-card]',         # 用户卡片
-                '.user-activity-link'       # 用户活动链接
+                '.user-activity-link',      # 用户活动链接
+                '.d-header .current-user'   # 头部当前用户
             ]
 
-            # 通用登录成功标志
-            general_indicators = [
-                '.logout',
-                '.profile',
-                '.dashboard',
-                '.user-info',
-                '.account-menu'
-            ]
-
-            all_indicators = linux_do_indicators + general_indicators
-
-            for indicator in all_indicators:
-                element = page.ele(indicator, timeout=1)
+            # 检查明确的登录成功标志
+            for indicator in linux_do_indicators:
+                element = page.ele(indicator, timeout=2)
                 if element:
-                    self.logger.debug(f"找到登录成功标志: {indicator}")
+                    self.logger.debug(f"找到明确的登录成功标志: {indicator}")
                     return True
 
-            # 检查页面文本内容
-            page_text = page.html.lower()
-            success_texts = [
-                'logout',
-                '退出',
-                '个人资料',
-                'profile',
-                'dashboard',
-                '仪表板'
-            ]
-
-            for text in success_texts:
-                if text in page_text:
-                    self.logger.debug(f"页面包含登录成功文本: {text}")
+            # 检查页面文本内容中的明确登录标志
+            try:
+                page_text = page.html.lower()
+                # 更严格的文本检查
+                if ('logout' in page_text or '退出' in page_text) and 'login' not in current_url.lower():
+                    self.logger.debug("页面包含退出链接，确认已登录")
                     return True
+            except:
+                pass
 
-            # 检查是否有登录表单（如果没有登录表单，可能已经登录）
-            login_form_indicators = [
-                '#login-account-name',
-                '#login-account-password',
-                '#login-button',
-                'input[type="password"]',
-                '.login-form'
-            ]
+            # 如果在登录页面，检查是否有错误信息（说明登录失败）
+            if 'login' in current_url.lower():
+                error_indicators = [
+                    '.alert-error',
+                    '.error-message',
+                    '.login-error',
+                    '.flash-error'
+                ]
 
-            has_login_form = False
-            for indicator in login_form_indicators:
-                if page.ele(indicator, timeout=1):
-                    has_login_form = True
-                    break
-
-            if not has_login_form and 'login' not in current_url.lower():
-                self.logger.debug("未找到登录表单且URL不包含login，可能已登录")
-                return True
+                for error_indicator in error_indicators:
+                    if page.ele(error_indicator, timeout=1):
+                        self.logger.debug("发现登录错误信息，确认未登录")
+                        return False
 
             return False
 
         except Exception as e:
-            self.logger.error(f"检查登录状态时出错: {e}")
+            self.logger.error(f"严格检查登录状态时出错: {e}")
             return False
+
+    def _check_login_success_drission(self, page) -> bool:
+        """检查DrissionPage登录是否成功（保持向后兼容）"""
+        return self._check_login_success_strict(page)
     
     def load_cookies_to_driver(self, driver, target_domain: str = None) -> None:
         """

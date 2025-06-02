@@ -1,22 +1,22 @@
 # CFCJ - Cloudflare Content Crawler Requirements
 
-# 核心依赖
+# Core dependencies
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 requests>=2.31.0
 
-# 浏览器自动化 (二选一或都安装)
+# Browser automation (choose one or install both)
 undetected-chromedriver>=3.5.0
 DrissionPage>=4.0.0
 
-# Selenium相关
+# Selenium related
 selenium>=4.15.0
 webdriver-manager>=4.0.0
 
-# 工具库
+# Utility libraries
 pathlib2>=2.3.7; python_version < "3.4"
 typing-extensions>=4.0.0; python_version < "3.8"
 
-# 可选依赖
-# cloudscraper>=1.2.60  # 备用CF绕过方案
-# fake-useragent>=1.4.0  # 随机User-Agent
+# Optional dependencies
+# cloudscraper>=1.2.60  # Alternative CF bypass solution
+# fake-useragent>=1.4.0  # Random User-Agent
