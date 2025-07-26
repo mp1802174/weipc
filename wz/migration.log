@@ -1,0 +1,22 @@
+2025-07-09 13:48:43,977 - INFO - === 检查迁移前提条件 ===
+2025-07-09 13:48:46,290 - INFO - package: mysql.connector.plugins
+2025-07-09 13:48:46,291 - INFO - plugin_name: mysql_native_password
+2025-07-09 13:48:46,313 - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 13:48:48,693 - INFO - [PREREQ] 数据库连接成功
+2025-07-09 13:48:48,881 - INFO - [PREREQ] 原表wechat_articles存在
+2025-07-09 13:48:49,595 - INFO - [PREREQ] 原表包含0条记录
+2025-07-09 13:48:49,810 - WARNING - 新表articles已存在，将进行增量迁移
+2025-07-09 13:48:49,811 - ERROR - [PREREQ] 新表articles已存在
+2025-07-09 13:48:49,811 - INFO - === 备份原始数据 ===
+2025-07-09 13:48:51,035 - INFO - [BACKUP] 创建备份表: wechat_articles_backup_20250709_134849
+2025-07-09 13:48:51,207 - INFO - [BACKUP] 备份表包含0条记录
+2025-07-09 13:48:51,207 - INFO - === 创建新表结构 ===
+2025-07-09 13:48:51,209 - INFO - === 迁移数据 ===
+2025-07-09 13:48:52,506 - INFO - [MIGRATE] 迁移了0条记录
+2025-07-09 13:48:53,339 - INFO - [MIGRATE] 新表中现有0条微信文章记录
+2025-07-09 13:48:53,339 - INFO - === 验证迁移结果 ===
+2025-07-09 13:48:53,682 - INFO - [VALIDATE] 原表记录数: 0
+2025-07-09 13:48:53,682 - INFO - [VALIDATE] 新表记录数: 0
+2025-07-09 13:48:53,942 - INFO - [VALIDATE] 数据完整性检查 - 空标题: None, 空URL: None, 空来源: None
+2025-07-09 13:48:54,130 - INFO - [VALIDATE] 重复URL数量: 0
+2025-07-09 13:48:54,131 - INFO - 迁移日志已保存到: migration_log_20250709_134854.json

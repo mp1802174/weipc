@@ -37,6 +37,12 @@ def main():
     parser.add_argument('--password', help='登录密码')
     parser.add_argument('--login-url', help='登录页面URL')
     
+    # 数据库选项
+    parser.add_argument('--database', action='store_true', help='使用数据库存储')
+    parser.add_argument('--no-database', action='store_true', help='不使用数据库存储')
+    parser.add_argument('--crawl-uncrawled', action='store_true', help='采集数据库中未采集的文章')
+    parser.add_argument('--limit', type=int, default=100, help='限制采集数量')
+
     # 其他选项
     parser.add_argument('--test', action='store_true', help='运行测试')
     parser.add_argument('--test-connection', action='store_true', help='测试连接')
@@ -58,9 +64,16 @@ def main():
         config.set('browser.headless', True)
     elif args.no_headless:
         config.set('browser.headless', False)
-    
+
+    # 确定是否使用数据库
+    use_database = True  # 默认使用数据库
+    if args.no_database:
+        use_database = False
+    elif args.database:
+        use_database = True
+
     # 创建API实例
-    api = CFCJAPI(config)
+    api = CFCJAPI(config, use_database=use_database)
     
     try:
         if args.test:
@@ -70,6 +83,9 @@ def main():
                 print("错误: 测试连接需要提供URL")
                 sys.exit(1)
             test_connection(api, args.url)
+        elif args.crawl_uncrawled:
+            # 采集数据库中未采集的文章
+            crawl_uncrawled_articles(api, args)
         elif args.urls:
             # 批量采集
             batch_crawl(api, args.urls, args, config)
@@ -98,15 +114,18 @@ def single_crawl(api: CFCJAPI, url: str, args, config: CFCJConfig):
     # 准备登录凭据
     login_credentials = None
     if args.login:
-        if not all([args.username, args.password, args.login_url]):
-            print("错误: 登录模式需要提供 --username, --password, --login-url")
+        if not all([args.username, args.password]):
+            print("错误: 登录模式需要提供 --username, --password")
             sys.exit(1)
-        
+
         login_credentials = {
             'username': args.username,
-            'password': args.password,
-            'login_url': args.login_url
+            'password': args.password
         }
+
+        # 如果提供了login_url，则添加到凭据中（用于向后兼容）
+        if args.login_url:
+            login_credentials['login_url'] = args.login_url
     
     try:
         result = api.crawl_article(url, args.login, login_credentials)
@@ -133,6 +152,54 @@ def single_crawl(api: CFCJAPI, url: str, args, config: CFCJConfig):
         sys.exit(1)
 
 
+def crawl_uncrawled_articles(api: CFCJAPI, args):
+    """采集数据库中未采集的文章"""
+    print(f"正在采集数据库中未采集的文章，限制数量: {args.limit}")
+
+    # 准备登录凭据
+    login_credentials = None
+    if args.login:
+        if not all([args.username, args.password]):
+            print("错误: 登录模式需要提供 --username, --password")
+            sys.exit(1)
+
+        login_credentials = {
+            'username': args.username,
+            'password': args.password
+        }
+
+        # 如果提供了login_url，则添加到凭据中（用于向后兼容）
+        if args.login_url:
+            login_credentials['login_url'] = args.login_url
+
+    try:
+        result = api.crawl_uncrawled_articles(args.limit, login_credentials)
+
+        # 输出结果
+        print(f"数据库采集完成!")
+        print(f"总数: {result['total']}")
+        print(f"成功: {result['success_count']}")
+        print(f"失败: {result['failed_count']}")
+
+        # 显示成功的文章
+        for article in result['success']:
+            print(f"✓ {article.get('title', 'N/A')} - 字数: {article.get('word_count', 0)}")
+
+        # 显示失败的URL
+        for failed in result['failed']:
+            print(f"✗ {failed['title']} - {failed['error']}")
+
+        # 保存结果
+        if args.output:
+            save_result(result, args.output)
+        else:
+            save_result(result, "uncrawled_articles_result.json")
+
+    except CFCJError as e:
+        print(f"数据库采集失败: {e}")
+        sys.exit(1)
+
+
 def batch_crawl(api: CFCJAPI, urls: List[str], args, config: CFCJConfig):
     """批量URL采集"""
     print(f"正在批量采集 {len(urls)} 个URL")
@@ -140,15 +207,18 @@ def batch_crawl(api: CFCJAPI, urls: List[str], args, config: CFCJConfig):
     # 准备登录凭据
     login_credentials = None
     if args.login:
-        if not all([args.username, args.password, args.login_url]):
-            print("错误: 登录模式需要提供 --username, --password, --login-url")
+        if not all([args.username, args.password]):
+            print("错误: 登录模式需要提供 --username, --password")
             sys.exit(1)
-        
+
         login_credentials = {
             'username': args.username,
-            'password': args.password,
-            'login_url': args.login_url
+            'password': args.password
         }
+
+        # 如果提供了login_url，则添加到凭据中（用于向后兼容）
+        if args.login_url:
+            login_credentials['login_url'] = args.login_url
     
     try:
         result = api.crawl_articles_batch(

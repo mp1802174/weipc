@@ -1,0 +1,78 @@
+[33mcommit de44eeeb406b91cec51690f35eb0c2da19451c2e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Mon Jun 2 17:33:59 2025 +0800
+
+    登录成功采集成功-2
+
+[33mcommit 102819795a24408187cffede0f60d9c5911e1fb2[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Mon Jun 2 17:25:04 2025 +0800
+
+    登录成功采集成功
+
+[33mcommit 700748587a736cb9ebbc5dc91cdbeffb3b018939[m
+Merge: f68fd39 52b92f8
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Sat May 31 17:10:30 2025 +0800
+
+    Merge branch 'master' of https://github.com/mp1802174/weipc
+
+[33mcommit f68fd3915d7b734ca5acaf3a83fa801fd102f443[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Sat May 31 17:04:44 2025 +0800
+
+    采集文章标题及内容正常-3块
+
+[33mcommit 0409a0d7eef5229685aaca713c336d7acf4d56d0[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Sat May 31 16:37:08 2025 +0800
+
+    采集文章标题及内容正常
+
+[33mcommit 52b92f8209dcd29d2c7d77bb6ce2c6a00f36d660[m
+Author: mp1802174 <71064038+mp1802174@users.noreply.github.com>
+Date:   Sat May 31 14:36:44 2025 +0800
+
+    Update README.md
+
+[33mcommit 9925607662539dcebcf6172fcc0c307fe5c3e846[m
+Author: mp1802174 <71064038+mp1802174@users.noreply.github.com>
+Date:   Sat May 31 14:35:30 2025 +0800
+
+    Update README.md
+
+[33mcommit 77ab2df96191c1690a480bbbd0c2bf14e49d3eda[m
+Author: mp1802174 <71064038+mp1802174@users.noreply.github.com>
+Date:   Sat May 31 14:32:59 2025 +0800
+
+    Create README.md
+
+[33mcommit 0d6f63baa92f3a67647ae51a90b9f1f08a43a74b[m
+Author: mp1802174 <71064038+mp1802174@users.noreply.github.com>
+Date:   Sat May 31 14:30:00 2025 +0800
+
+    Create LICENSE
+
+[33mcommit e3cdd7441e345845433bae698883b81d8e0fa752[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Sun May 25 18:16:36 2025 +0800
+
+    改正凭据无效提示
+
+[33mcommit 0b44e8c80ec021ed4dc7f0a9872682b3a5448c54[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Fri May 23 16:03:18 2025 +0800
+
+    抓取定时更新首页均正常，下一步AI改写
+
+[33mcommit 4d672cd137f7c39c705a414a31b4a58abada06e8[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Thu May 22 16:36:53 2025 +0800
+
+    登录及抓取入库正常，下一步做个首页
+
+[33mcommit 61b2a166151be3bcdebc7668f1ba591eb03c82bd[m
+Author: mp1802174 <mp1802174@smail.nju.edu.cn>
+Date:   Wed May 21 23:35:36 2025 +0800
+
+    扫码更新正常

@@ -1,0 +1,74 @@
+[
+  {
+    "timestamp": "2025-07-09T13:48:48.693098",
+    "step": "PREREQ",
+    "message": "数据库连接成功",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:48.881720",
+    "step": "PREREQ",
+    "message": "原表wechat_articles存在",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:49.595623",
+    "step": "PREREQ",
+    "message": "原表包含0条记录",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:49.811068",
+    "step": "PREREQ",
+    "message": "新表articles已存在",
+    "success": false
+  },
+  {
+    "timestamp": "2025-07-09T13:48:51.035450",
+    "step": "BACKUP",
+    "message": "创建备份表: wechat_articles_backup_20250709_134849",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:51.206973",
+    "step": "BACKUP",
+    "message": "备份表包含0条记录",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:52.506319",
+    "step": "MIGRATE",
+    "message": "迁移了0条记录",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:53.339044",
+    "step": "MIGRATE",
+    "message": "新表中现有0条微信文章记录",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:53.682220",
+    "step": "VALIDATE",
+    "message": "原表记录数: 0",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:53.682477",
+    "step": "VALIDATE",
+    "message": "新表记录数: 0",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:53.942059",
+    "step": "VALIDATE",
+    "message": "数据完整性检查 - 空标题: None, 空URL: None, 空来源: None",
+    "success": true
+  },
+  {
+    "timestamp": "2025-07-09T13:48:54.130886",
+    "step": "VALIDATE",
+    "message": "重复URL数量: 0",
+    "success": true
+  }
+]

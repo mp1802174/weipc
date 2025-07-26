@@ -1,0 +1,432 @@
+{
+  "success": [
+    {
+      "url": "https://linux.do/t/topic/691581",
+      "title": "在GPT Plus edu教育优惠关车门这天终于不依靠edu mail上车了",
+      "content": "<div class=\"cooked\"><p dir=\"auto\">之前根据社区众多大佬的经验，注册的edu邮箱验证都没过，包括使用站内的提交文件的教程都失败了。</p>\n<p dir=\"auto\">今天下午还是不死心，所以索性就随便找了一个学校（没有注册，没有申请，更没有选课），然后通过验证文件的方式过了，真的是运气。验证了两次，第一次手持文件拍照上传失败，第二次直接文件截图却成功了。</p>\n<p dir=\"auto\">至于文件模板，站内有相关教程，大家自行摸索哈，不要照搬。</p>\n<p dir=\"auto\">学校我不会公布，大家自己去找。</p>\n<p dir=\"auto\">希望能给有需要的佬友带来一些启发，然后赶上末班车。<br/>\n</p><div class=\"lightbox-wrapper\" dir=\"auto\"><a class=\"lightbox\" data-download-href=\"https://linux.do/uploads/default/5c51d82a486c3c48a94a0adfabab8f4802e4c51c\" href=\"https://linux.do/uploads/default/original/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c.png\" title=\"CleanShot 2025-05-31 at 15.51.25@2x\"><img alt=\"CleanShot 2025-05-31 at 15.51.25@2x\" data-base62-sha1=\"daHheYsMcHhRZFEBAb7QC0CeTs8\" data-dominant-color=\"F0F0F1\" height=\"184\" loading=\"lazy\" src=\"https://linux.do/uploads/default/optimized/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c_2_689x184.png\" srcset=\"https://linux.do/uploads/default/optimized/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c_2_689x184.png, https://linux.do/uploads/default/optimized/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c_2_1033x276.png 1.5x, https://linux.do/uploads/default/original/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c.png 2x\" style=\"aspect-ratio: 689 / 184;\" width=\"689\"/><div class=\"meta\"><svg aria-hidden=\"true\" class=\"fa d-icon d-icon-far-image svg-icon\"><use href=\"#far-image\"></use></svg><span class=\"filename\">CleanShot 2025-05-31 at 15.51.25@2x</span><span class=\"informations\">1308×350 61.2 KB</span><svg aria-hidden=\"true\" class=\"fa d-icon d-icon-discourse-expand svg-icon\"><use href=\"#discourse-expand\"></use></svg></div></a></div><p></p><div aria-hidden=\"true\" class=\"cooked-selection-barrier\"><br/></div></div>",
+      "author": "Neoleveling",
+      "publish_time": "1748700117397",
+      "tags": [],
+      "images": [
+        {
+          "url": "https://linux.do/uploads/default/optimized/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c_2_689x184.png",
+          "alt": "CleanShot 2025-05-31 at 15.51.25@2x",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/images/emoji/twemoji/heart.png?v=14",
+          "alt": "heart",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/images/emoji/twemoji/+1.png?v=14",
+          "alt": "+1",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/images/emoji/twemoji/laughing.png?v=14",
+          "alt": "laughing",
+          "title": ""
+        }
+      ],
+      "links": [
+        {
+          "url": "https://linux.do/",
+          "text": "",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/chat",
+          "text": "",
+          "title": "聊天"
+        },
+        {
+          "url": "https://linux.do/latest",
+          "text": "话题",
+          "title": "所有话题"
+        },
+        {
+          "url": "https://linux.do/u/jd.com/activity/drafts",
+          "text": "我的帖子",
+          "title": "我的未发布草稿"
+        },
+        {
+          "url": "https://linux.do/about",
+          "text": "关于",
+          "title": "关于此网站的更多详细信息"
+        },
+        {
+          "url": "https://linux.do/upcoming-events",
+          "text": "即将到来的活动",
+          "title": "即将到来的活动"
+        },
+        {
+          "url": "https://2048.linux.do",
+          "text": "2048",
+          "title": ""
+        },
+        {
+          "url": "https://status.linux.do",
+          "text": "Status",
+          "title": ""
+        },
+        {
+          "url": "https://shanwaiyoushan.taobao.com",
+          "text": "T-Shirt",
+          "title": ""
+        },
+        {
+          "url": "https://connect.linux.do",
+          "text": "Connect",
+          "title": ""
+        },
+        {
+          "url": "https://webmail.linux.do",
+          "text": "Webmail",
+          "title": ""
+        },
+        {
+          "url": "https://t.me/linux_do_channel",
+          "text": "Channel",
+          "title": ""
+        },
+        {
+          "url": "https://t.me/ja_netfilter_group",
+          "text": "Telegram",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/c/develop/4",
+          "text": "开发调优",
+          "title": "此版块包含开发、测试、调试、部署、优化、安全等方面的内容"
+        },
+        {
+          "url": "https://linux.do/c/resource/14",
+          "text": "资源荟萃",
+          "title": "包括软件分享、开源仓库、视频课程、书籍等分享"
+        },
+        {
+          "url": "https://linux.do/c/wiki/42",
+          "text": "文档共建",
+          "title": "佬友化身翰林学士，一起来编书了。"
+        },
+        {
+          "url": "https://linux.do/c/trade/10",
+          "text": "跳蚤市场",
+          "title": "交易相关的版块，包含实体和虚拟物品供求、拼车等等"
+        },
+        {
+          "url": "https://linux.do/c/job/27",
+          "text": "非我莫属",
+          "title": "学成文武艺，货与帝王家。招聘/求职分类，只能发此类信息。"
+        },
+        {
+          "url": "https://linux.do/c/reading/32",
+          "text": "读书成诗",
+          "title": "跟着佬友们一起在论坛读完一本书是什么体验？"
+        },
+        {
+          "url": "https://linux.do/c/startup/46",
+          "text": "扬帆起航",
+          "title": "扬帆起航，目标是星辰大海！"
+        },
+        {
+          "url": "https://linux.do/c/news/34",
+          "text": "前沿快讯",
+          "title": "前沿快讯，不出门能知天下事。"
+        },
+        {
+          "url": "https://linux.do/c/feeds/92",
+          "text": "网络记忆",
+          "title": "网络是有记忆的，确信！"
+        },
+        {
+          "url": "https://linux.do/c/welfare/36",
+          "text": "福利羊毛",
+          "title": "正经人谁花那个钱啊～ 此版块供羊毛、抽奖等福利使用。"
+        },
+        {
+          "url": "https://linux.do/c/gossip/11",
+          "text": "搞七捻三",
+          "title": "闲聊吹水的板块。不得讨论政治、色情等违规内容。"
+        },
+        {
+          "url": "https://linux.do/c/feedback/2",
+          "text": "运营反馈",
+          "title": "有关此站点、其组织、运作方式以及如何改进的讨论。"
+        },
+        {
+          "url": "https://linux.do/c/muted/45",
+          "text": "深海幽域",
+          "title": "冰山下的深海。帖子不会上信息流、不会被论坛搜索。"
+        },
+        {
+          "url": "https://linux.do/categories",
+          "text": "所有类别",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/%E6%8A%BD%E5%A5%96",
+          "text": "抽奖",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/%E5%85%AC%E5%91%8A",
+          "text": "公告",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/%E7%B2%BE%E5%8D%8E%E7%A5%9E%E5%B8%96",
+          "text": "精华神帖",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/%E5%BF%AB%E9%97%AE%E5%BF%AB%E7%AD%94",
+          "text": "快问快答",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD",
+          "text": "人工智能",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tags",
+          "text": "所有标签",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/u/jd.com/messages",
+          "text": "收件箱",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/faq",
+          "text": "《常见问题解答》",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/482293",
+          "text": "❤️ 再忍不住，也不要做这种事啊 ❤️",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/691581",
+          "text": "在GPT Plus edu教育优惠关车门这天终于不依靠edu mail上车了",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/c/welfare/36",
+          "text": "福利羊毛",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/c/welfare/welfare-lv2/61",
+          "text": "福利羊毛, Lv2",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/人工智能",
+          "text": "人工智能",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/openai",
+          "text": "OpenAI",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/u/Neoleveling",
+          "text": "",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/u/Neoleveling",
+          "text": "🅂🄾🄻🄾 🄻🄴🅅🄴🄻🄸🄽🄶",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/u/Neoleveling",
+          "text": "Neoleveling",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/691581?u=jd.com",
+          "text": "19 天",
+          "title": "发布日期"
+        },
+        {
+          "url": "https://linux.do/uploads/default/original/4X/5/c/5/5c51d82a486c3c48a94a0adfabab8f4802e4c51c.png",
+          "text": "CleanShot 2025-05-31 at 15.51.25@2x1308×350 61.2 KB",
+          "title": "CleanShot 2025-05-31 at 15.51.25@2x"
+        },
+        {
+          "url": "https://linux.do/t/topic/585559",
+          "text": "👕 岂曰无衣？与子同袍 👕️",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/692750/255",
+          "text": "抽个奖吧, Augment",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/692750/255",
+          "text": "64",
+          "title": "您在此话题中有 64 个未读帖子"
+        },
+        {
+          "url": "https://linux.do/c/welfare/welfare-lv2/61",
+          "text": "福利羊毛, Lv2",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/人工智能",
+          "text": "人工智能",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/抽奖",
+          "text": "抽奖",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/692750/1",
+          "text": "314",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/692750/318",
+          "text": "18 天",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/592434/327",
+          "text": "SJSU复活， San Jose State University， 权益汇总",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/592434/327",
+          "text": "32",
+          "title": "您在此话题中有 32 个未读帖子"
+        },
+        {
+          "url": "https://linux.do/c/welfare/welfare-lv2/61",
+          "text": "福利羊毛, Lv2",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/薅羊毛",
+          "text": "薅羊毛",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/教育邮箱",
+          "text": "教育邮箱",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/592434/1",
+          "text": "350",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/592434/358",
+          "text": "29 天",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/641374/101",
+          "text": "方法已死，后面过纯靠玄学，等新学校吧。",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/641374/101",
+          "text": "207",
+          "title": "您在此话题中有 207 个未读帖子"
+        },
+        {
+          "url": "https://linux.do/c/welfare/welfare-lv2/61",
+          "text": "福利羊毛, Lv2",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/人工智能",
+          "text": "人工智能",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/chatgpt",
+          "text": "ChatGPT",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/openai",
+          "text": "OpenAI",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/641374/1",
+          "text": "297",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/641374/307",
+          "text": "5月 19 日",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/644291/35",
+          "text": "抽一个Helium Mobile",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/644291/35",
+          "text": "66",
+          "title": "您在此话题中有 66 个未读帖子"
+        },
+        {
+          "url": "https://linux.do/c/welfare/welfare-lv2/61",
+          "text": "福利羊毛, Lv2",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/tag/抽奖",
+          "text": "抽奖",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/644291/1",
+          "text": "99",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/t/topic/644291/100",
+          "text": "5月 12 日",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/unread",
+          "text": "91 个未读",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/new",
+          "text": "165 个新",
+          "title": ""
+        },
+        {
+          "url": "https://linux.do/c/welfare/welfare-lv2/61",
+          "text": "福利羊毛, Lv2",
+          "title": ""
+        }
+      ],
+      "word_count": 1662,
+      "extracted_at": "2025-06-19T14:26:15.291072"
+    }
+  ],
+  "failed": [],
+  "total": 1,
+  "success_count": 1,
+  "failed_count": 0
+}

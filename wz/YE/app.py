@@ -41,6 +41,16 @@ except ImportError:
         WeChatAuth = None
         LoginError = Exception
 
+# 导入集成采集器
+try:
+    from core.integrated_crawler import IntegratedCrawler
+    from core.database import UnifiedDatabaseManager, CrawlStatus
+except ImportError as e:
+    print(f"警告: 未找到集成采集器模块，内容采集功能可能无法正常工作: {e}")
+    IntegratedCrawler = None
+    UnifiedDatabaseManager = None
+    CrawlStatus = None
+
 # 配置日志
 log_dir = os.path.join(BASE_DIR, 'logs')
 os.makedirs(log_dir, exist_ok=True)
@@ -420,6 +430,241 @@ def save_job_logs(logs):
         logger.error(f"保存任务执行记录失败: {e}")
         return False
 
+def run_content_crawler(source_type=None, limit=50, batch_size=5):
+    """
+    运行内容采集器
+
+    Args:
+        source_type: 指定采集的来源类型 (wechat, linux_do, nodeseek, external)
+        limit: 采集文章数量限制
+        batch_size: 批次大小
+
+    Returns:
+        tuple: (成功标志, 结果消息, 统计信息)
+    """
+    logger.info(f"开始内容采集 - 来源类型: {source_type}, 限制: {limit}")
+
+    if IntegratedCrawler is None:
+        return False, "集成采集器模块未正确加载", {}
+
+    try:
+        with IntegratedCrawler() as crawler:
+            # 执行批量采集
+            result = crawler.batch_crawl(
+                source_type=source_type,
+                limit=limit,
+                batch_size=batch_size
+            )
+
+            success = result.get('total_processed', 0) > 0 or result.get('successful', 0) > 0
+
+            if success:
+                message = f"内容采集完成 - 处理: {result.get('total_processed', 0)}, 成功: {result.get('successful', 0)}, 失败: {result.get('failed', 0)}"
+            else:
+                message = "没有找到待采集的文章或采集失败"
+
+            logger.info(f"内容采集结果: {message}")
+            return success, message, result
+
+    except Exception as e:
+        error_msg = f"内容采集过程中发生错误: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return False, error_msg, {}
+
+def save_urls_to_database(urls, source_type='external', source_name='手动导入'):
+    """将URL列表保存到wechat_articles表，仅入库不采集"""
+    import mysql.connector
+    from datetime import datetime
+    import re
+
+    # 数据库配置
+    db_config = {
+        'host': '140.238.201.162',
+        'port': 3306,
+        'user': 'cj',
+        'password': '760516',
+        'database': 'cj',
+        'charset': 'utf8mb4'
+    }
+
+    def detect_source_type_from_url(url):
+        """根据URL自动检测来源类型"""
+        if 'linux.do' in url:
+            return 'linux.do'
+        elif 'nodeseek.com' in url:
+            return 'nodeseek.com'
+        elif 'mp.weixin.qq.com' in url:
+            return 'wechat'
+        else:
+            return 'external'
+
+    results = []
+
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        for url in urls:
+            try:
+                # 检查URL是否已存在 - 在wechat_articles表中检查
+                check_sql = "SELECT id FROM wechat_articles WHERE article_url = %s"
+                cursor.execute(check_sql, (url,))
+                existing = cursor.fetchone()
+
+                if existing:
+                    results.append({
+                        'url': url,
+                        'status': 'skipped',
+                        'reason': '链接已存在'
+                    })
+                    continue
+
+                # 自动检测来源类型
+                detected_source_type = detect_source_type_from_url(url)
+
+                # 根据来源类型决定account_name和site_name
+                if detected_source_type == 'wechat':
+                    account_name = source_name if source_name != '手动导入' else ''
+                    site_name = 'wechat'
+                else:
+                    account_name = ''  # 非微信链接account_name留空
+                    site_name = detected_source_type
+
+                # 插入新记录到wechat_articles表
+                insert_sql = """
+                INSERT INTO wechat_articles
+                (account_name, title, article_url, publish_timestamp, source_type, crawl_status, site_name, fetched_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """
+
+                cursor.execute(insert_sql, (
+                    account_name,  # 微信链接使用source_name，其他留空
+                    '',  # title留空，等采集时填入真实标题
+                    url,
+                    datetime.now(),  # 使用当前时间作为发布时间
+                    detected_source_type,  # 使用检测到的来源类型
+                    0,  # crawl_status = 0 表示待采集
+                    site_name,  # 站点名称
+                    datetime.now()
+                ))
+
+                results.append({
+                    'url': url,
+                    'status': 'success',
+                    'article_id': cursor.lastrowid,
+                    'detected_source': detected_source_type
+                })
+
+            except Exception as e:
+                logger.error(f"保存URL失败: {url} - {e}")
+                results.append({
+                    'url': url,
+                    'status': 'failed',
+                    'error': str(e)
+                })
+
+        conn.commit()
+
+    except Exception as e:
+        logger.error(f"数据库连接失败: {e}")
+        # 如果数据库连接失败，返回所有URL为失败状态
+        results = [{'url': url, 'status': 'failed', 'error': str(e)} for url in urls]
+
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+    return results
+
+def get_crawl_status():
+    """
+    获取采集状态统计
+
+    Returns:
+        dict: 采集状态统计信息
+    """
+    if UnifiedDatabaseManager is None:
+        return {}
+
+    try:
+        with UnifiedDatabaseManager() as db:
+            stats = db.get_crawl_statistics()
+            return stats
+    except Exception as e:
+        logger.error(f"获取采集状态失败: {e}")
+        return {}
+
+def schedule_content_crawler_job(job_id, schedule_type, days, time, source_type=None, limit=50, batch_size=5):
+    """
+    调度内容采集任务
+
+    Args:
+        job_id: 任务ID
+        schedule_type: 计划类型 (daily, weekly)
+        days: 每周几执行 (0-6, 0=周一)
+        time: 执行时间 (HH:MM)
+        source_type: 来源类型
+        limit: 采集数量限制
+        batch_size: 批次大小
+
+    Returns:
+        bool: 是否成功调度
+    """
+    try:
+        hour, minute = map(int, time.split(':'))
+
+        if schedule_type == 'daily':
+            trigger = CronTrigger(hour=hour, minute=minute)
+            description = f"每天 {time} 内容采集"
+        elif schedule_type == 'weekly':
+            if isinstance(days, str):
+                days = [int(d) for d in days.split(',')]
+
+            dow = [d+1 for d in days]
+            day_names = ['一', '二', '三', '四', '五', '六', '日']
+            selected_days = [day_names[d] for d in days]
+
+            trigger = CronTrigger(day_of_week=','.join(map(str, dow)), hour=hour, minute=minute)
+            description = f"每周{','.join(selected_days)} {time} 内容采集"
+        else:
+            return False
+
+        def job_func():
+            job_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            logger.info(f"开始执行内容采集计划任务 {job_id}: {description}")
+
+            success, message, stats = run_content_crawler(source_type, limit, batch_size)
+
+            logger.info(f"内容采集计划任务 {job_id} 执行完成: {message}")
+
+            job_logs = load_job_logs()
+            job_logs.append({
+                'job_id': job_id,
+                'job_type': 'content_crawl',
+                'start_time': job_start_time,
+                'end_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'success': success,
+                'message': message,
+                'articles_count': stats.get('successful', 0),
+                'source_type': source_type
+            })
+            save_job_logs(job_logs[-100:])
+
+        scheduler.add_job(
+            job_func,
+            trigger=trigger,
+            id=job_id,
+            replace_existing=True,
+            name=f"内容采集任务 - {description}"
+        )
+
+        logger.info(f"已调度内容采集任务 {job_id}: {description}")
+        return True
+
+    except Exception as e:
+        logger.error(f"调度内容采集任务失败: {e}")
+        return False
+
 @app.route('/')
 def index():
     """首页"""
@@ -450,6 +695,118 @@ def update_cred():
     """更新凭证"""
     success, message = update_credentials()
     return jsonify({'success': success, 'message': message})
+
+@app.route('/crawl_urls', methods=['POST'])
+def crawl_urls():
+    """手动URL入库（仅保存链接，不立即采集）"""
+    urls_text = request.form.get('urls', '').strip()
+    source_type = request.form.get('source_type', 'external')
+    source_name = request.form.get('source_name', '手动导入')
+
+    if not urls_text:
+        return jsonify({
+            'success': False,
+            'message': '请输入要采集的URL'
+        })
+
+    # 解析URL列表
+    urls = []
+    for line in urls_text.split('\n'):
+        line = line.strip()
+        if line and not line.startswith('#'):
+            urls.append(line)
+
+    if not urls:
+        return jsonify({
+            'success': False,
+            'message': '没有找到有效的URL'
+        })
+
+    try:
+        # 简化版：直接入库，不立即采集
+        results = save_urls_to_database(urls, source_type, source_name)
+
+        successful = len([r for r in results if r['status'] == 'success'])
+        skipped = len([r for r in results if r['status'] == 'skipped'])
+        failed = len([r for r in results if r['status'] == 'failed'])
+
+        return jsonify({
+            'success': True,
+            'message': f'URL入库完成！成功: {successful}个, 跳过: {skipped}个, 失败: {failed}个',
+            'results': results
+        })
+
+    except Exception as e:
+        logger.error(f"URL入库失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'入库失败: {str(e)}'
+        })
+
+@app.route('/crawl_content', methods=['POST'])
+def crawl_content():
+    """触发内容采集"""
+    source_type = request.form.get('source_type')
+    limit = request.form.get('limit', default=50, type=int)
+    batch_size = request.form.get('batch_size', default=5, type=int)
+
+    success, message, stats = run_content_crawler(source_type, limit, batch_size)
+
+    response_data = {
+        'success': success,
+        'message': message,
+        'stats': stats
+    }
+
+    return jsonify(response_data)
+
+@app.route('/api/crawl_status', methods=['GET'])
+def api_crawl_status():
+    """获取采集状态API"""
+    stats = get_crawl_status()
+    return jsonify({
+        'success': True,
+        'data': stats
+    })
+
+@app.route('/schedule_content', methods=['POST'])
+def schedule_content():
+    """设置定期内容采集任务"""
+    schedule_type = request.form.get('schedule_type')
+    days = request.form.getlist('days')
+    time = request.form.get('time')
+    source_type = request.form.get('source_type')
+    limit = int(request.form.get('limit', 50))
+    batch_size = int(request.form.get('batch_size', 5))
+
+    if not schedule_type or not time:
+        return jsonify({'success': False, 'message': '缺少必要参数'})
+
+    if schedule_type == 'weekly' and not days:
+        return jsonify({'success': False, 'message': '请选择每周执行的日期'})
+
+    job_id = f"content_crawl_job_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+    success = schedule_content_crawler_job(job_id, schedule_type, days, time, source_type, limit, batch_size)
+
+    if success:
+        schedules = load_schedule_config()
+        schedules.append({
+            'id': job_id,
+            'type': 'content_crawl',
+            'schedule_type': schedule_type,
+            'days': days,
+            'time': time,
+            'source_type': source_type,
+            'limit': limit,
+            'batch_size': batch_size,
+            'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+        save_schedule_config(schedules)
+
+        return jsonify({'success': True, 'message': '定期内容采集任务已设置'})
+    else:
+        return jsonify({'success': False, 'message': '设置定期内容采集任务失败'})
 
 @app.route('/schedule', methods=['POST'])
 def schedule():
@@ -568,18 +925,27 @@ def init_scheduler():
             logger.info(f"任务 {job_id} 已在调度中，跳过重复添加。")
             continue
 
+        task_type = config.get('type', 'link_crawl')  # 默认为链接抓取任务
         schedule_type = config.get('schedule_type')
         days = config.get('days')
         time_str = config.get('time') # 使用 time_str 避免与 time 模块冲突
-        account = config.get('account')
-        limit = config.get('limit', 10)
-        
+
         if not all([job_id, schedule_type, time_str]):
             logger.warning(f"跳过无效的计划任务配置（缺少id, type或time）: {config}")
             continue
-            
+
         try:
-            schedule_crawler_job(job_id, schedule_type, days, time_str, account, limit)
+            if task_type == 'content_crawl':
+                # 内容采集任务
+                source_type = config.get('source_type')
+                limit = config.get('limit', 50)
+                batch_size = config.get('batch_size', 5)
+                schedule_content_crawler_job(job_id, schedule_type, days, time_str, source_type, limit, batch_size)
+            else:
+                # 链接抓取任务（默认）
+                account = config.get('account')
+                limit = config.get('limit', 10)
+                schedule_crawler_job(job_id, schedule_type, days, time_str, account, limit)
         except Exception as e:
             logger.error(f"添加计划任务 {job_id} 到调度器时失败: {e}", exc_info=True)
 

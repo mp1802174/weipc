@@ -125,6 +125,168 @@ class CFCJConfig:
                         "time.relative-date"
                     ]
                 }
+            },
+            "sites": {
+                "linux.do": {
+                    "name": "Linux.do",
+                    "domain": "linux.do",
+                    "requires_login": True,
+                    "login_config": {
+                        "login_url": "https://linux.do/login",
+                        "username_selector": "#login-account-name",
+                        "password_selector": "#login-account-password",
+                        "submit_selector": "#login-button",
+                        "success_indicators": [
+                            ".header-dropdown-toggle",
+                            ".current-user",
+                            ".user-menu"
+                        ]
+                    },
+                    "extraction": {
+                        "title_selectors": [
+                            "a.fancy-title span[dir='auto']",
+                            ".fancy-title span[dir='auto']",
+                            "h1"
+                        ],
+                        "main_post_selector": "#post_1, .topic-post:first-child, [data-post-number='1']",
+                        "content_selectors": [
+                            ".cooked"
+                        ],
+                        "author_selectors": [
+                            ".topic-meta-data .creator a",
+                            ".names .first a",
+                            ".topic-avatar .username",
+                            ".post .username"
+                        ],
+                        "time_selectors": [
+                            ".topic-meta-data .created-at",
+                            ".post-date",
+                            ".relative-date",
+                            "time.relative-date"
+                        ],
+                        "exclude_selectors": [
+                            ".nav",
+                            ".header",
+                            ".footer",
+                            ".sidebar",
+                            ".aside",
+                            ".comments",
+                            ".replies",
+                            ".user-info",
+                            ".avatar",
+                            ".controls",
+                            ".buttons",
+                            ".topic-meta-data",
+                            ".topic-map",
+                            ".suggested-topics",
+                            ".topic-footer-buttons",
+                            ".post-menu-area",
+                            ".topic-navigation",
+                            ".quote-controls",
+                            ".post-controls",
+                            ".user-card",
+                            ".topic-status-info",
+                            ".topic-post:not(:first-child)",
+                            "[data-post-number]:not([data-post-number='1'])",
+                            ".post-stream .topic-post:not(:first-child)",
+                            ".timeline-container",
+                            ".topic-timeline",
+                            ".progress-wrapper",
+                            ".topic-footer-main-buttons",
+                            ".suggested-topics-wrapper",
+                            ".more-topics"
+                        ]
+                    }
+                },
+                "nodeseek.com": {
+                    "name": "NodeSeek",
+                    "domain": "nodeseek.com",
+                    "requires_login": True,
+                    "login_config": {
+                        "login_url": "https://www.nodeseek.com/signIn.html",
+                        "username_selector": "input[name='username']",
+                        "password_selector": "input[name='password']",
+                        "submit_selector": "button[type='submit']",
+                        "success_indicators": [
+                            ".user-menu",
+                            ".logout",
+                            ".user-avatar"
+                        ]
+                    },
+                    "extraction": {
+                        "content_selectors": [
+                            ".post-content",
+                            ".message-content",
+                            ".content"
+                        ],
+                        "title_selectors": [
+                            "h1.title",
+                            ".post-title",
+                            "h1"
+                        ],
+                        "author_selectors": [
+                            ".author-name",
+                            ".username",
+                            ".user-info .name"
+                        ],
+                        "time_selectors": [
+                            ".post-time",
+                            ".created-time",
+                            "time"
+                        ],
+                        "exclude_selectors": [
+                            ".sidebar",
+                            ".navigation",
+                            ".footer",
+                            ".ads",
+                            ".comments-section"
+                        ]
+                    }
+                },
+                "mp.weixin.qq.com": {
+                    "name": "微信公众号",
+                    "domain": "mp.weixin.qq.com",
+                    "requires_login": False,
+                    "extraction": {
+                        "content_selectors": [
+                            "#js_content",
+                            ".rich_media_content",
+                            ".article-content"
+                        ],
+                        "title_selectors": [
+                            "#activity-name",
+                            ".rich_media_title",
+                            "h1"
+                        ],
+                        "author_selectors": [
+                            ".rich_media_meta_nickname",
+                            ".author",
+                            "#js_name"
+                        ],
+                        "time_selectors": [
+                            "#publish_time",
+                            ".rich_media_meta_text",
+                            ".publish-time"
+                        ],
+                        "exclude_selectors": [
+                            ".rich_media_tool",
+                            ".share_media",
+                            ".qr_code_pc",
+                            ".reward_area",
+                            ".comment_area"
+                        ],
+                        # 差异化内容采集规则
+                        "author_based_rules": {
+                            "舞林攻略指南": {
+                                "content_start_marker": "下方小卡片关注 星标置顶",
+                                "content_end_marker": "——节选自舞林攻略",
+                                "include_markers": False,  # 是否包含标识符本身
+                                "fallback_to_full": True   # 如果找不到标识符，是否回退到完整内容
+                            }
+                            # 可以继续添加其他公众号的规则
+                        }
+                    }
+                }
             }
         }
         

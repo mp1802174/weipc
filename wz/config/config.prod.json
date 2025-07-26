@@ -1,0 +1,104 @@
+{
+  "system": {
+    "project_name": "WZ Content Management System",
+    "version": "1.0.0",
+    "debug": false,
+    "log_level": "INFO",
+    "data_dir": "data",
+    "logs_dir": "logs",
+    "temp_dir": "temp",
+    "timezone": "Asia/Shanghai",
+    "language": "zh_CN"
+  },
+  "database": {
+    "host": "140.238.201.162",
+    "port": 3306,
+    "user": "cj",
+    "password": "760516",
+    "database": "cj",
+    "charset": "utf8mb4",
+    "autocommit": true,
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_timeout": 30,
+    "pool_recycle": 3600
+  },
+  "wechat": {
+    "enabled": true,
+    "batch_size": 10,
+    "retry_times": 3,
+    "retry_delay": 5,
+    "request_delay": 2,
+    "auto_login": true,
+    "session_timeout": 3600,
+    "cookie_file": "id_info.json",
+    "accounts_file": "name2fakeid.json"
+  },
+  "cfcj": {
+    "enabled": true,
+    "headless": false,
+    "window_size": [
+      1920,
+      1080
+    ],
+    "timeout": 30,
+    "page_load_timeout": 60,
+    "implicit_wait": 10,
+    "max_retries": 2,
+    "retry_delay": 5,
+    "cf_wait_time": 10,
+    "request_delay": 2,
+    "batch_size": 5,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  "publisher": {
+    "enabled": false,
+    "auto_publish": false,
+    "batch_size": 5,
+    "retry_times": 3,
+    "retry_delay": 10,
+    "platforms": {
+      "8wf_net": {
+        "enabled": false,
+        "type": "discuz",
+        "url": "https://8wf.net",
+        "username": "",
+        "password": "",
+        "default_forum_id": "1",
+        "auto_category": true
+      },
+      "00077_top": {
+        "enabled": false,
+        "type": "discourse",
+        "url": "https://00077.top",
+        "api_key": "",
+        "api_username": "",
+        "default_category": "1"
+      },
+      "1rmb_net": {
+        "enabled": false,
+        "type": "discuz",
+        "url": "https://1rmb.net",
+        "username": "",
+        "password": "",
+        "default_forum_id": "1",
+        "auto_category": true
+      }
+    }
+  },
+  "auth": {
+    "cookie_file": "id_info.json",
+    "session_timeout": 3600,
+    "auto_refresh": true,
+    "encryption_key": ""
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": false,
+    "secret_key": "CHANGE_THIS_IN_PRODUCTION",
+    "auto_crawl_interval": 3600,
+    "max_log_size": 5242880,
+    "log_backup_count": 3
+  }
+}

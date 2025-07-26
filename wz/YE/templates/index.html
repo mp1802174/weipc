@@ -46,14 +46,14 @@
 <body>
     <div class="container">
         <header class="d-flex flex-column align-items-center mb-4">
-            <h1 class="display-5 fw-bold">微信公众号文章抓取</h1>
-            <p class="fs-5 text-muted">抓取公众号文章并存储到数据库</p>
+            <h1 class="display-5 fw-bold">WZ内容管理系统</h1>
+            <p class="fs-5 text-muted">多源内容采集与管理平台</p>
         </header>
 
         <!-- 页面标题 -->
         <div class="page-header">
             <div class="d-flex justify-content-between align-items-center">
-                <h1>微信公众号文章抓取</h1>
+                <h1>内容管理控制台</h1>
                 <div>
                     <a href="{{ url_for('view_articles') }}" class="btn btn-success me-2">
                         <i class="bi bi-list-ul"></i> 查看最新文章
@@ -67,10 +67,11 @@
 
         <div class="row">
             <div class="col-md-6">
-                <!-- 立即抓取 -->
+                <!-- 立即抓取链接 -->
                 <div class="card">
-                    <div class="card-header">立即抓取</div>
+                    <div class="card-header">📱 获取微信链接</div>
                     <div class="card-body">
+                        <p class="text-muted small">获取微信公众号文章链接并存储到数据库</p>
                         <form id="crawlForm">
                             <div class="mb-3">
                                 <label for="crawlAccount" class="form-label">公众号名称 (可选)</label>
@@ -81,11 +82,77 @@
                                 <input type="number" class="form-control" id="crawlLimit" name="limit" value="10" min="1" max="100">
                             </div>
                             <button type="submit" class="btn btn-primary" id="crawlBtn">
-                                立即抓取
+                                获取链接
                                 <span class="spinner-border spinner-border-sm loading" id="crawlLoading"></span>
                             </button>
                         </form>
                         <div class="alert" id="crawlAlert"></div>
+                    </div>
+                </div>
+
+                <!-- 手动URL入库 -->
+                <div class="card">
+                    <div class="card-header">🔗 手动URL入库</div>
+                    <div class="card-body">
+                        <p class="text-muted small">输入URL保存到数据库，等待后续采集</p>
+                        <form id="urlCrawlForm">
+                            <div class="mb-3">
+                                <label for="urlInput" class="form-label">文章URL</label>
+                                <textarea class="form-control" id="urlInput" name="urls" rows="3"
+                                    placeholder="输入要采集的URL，每行一个&#10;例如：&#10;https://linux.do/t/topic/123456&#10;https://www.nodeseek.com/post-123456-1"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="urlSourceType" class="form-label">来源类型</label>
+                                <select class="form-control" id="urlSourceType" name="source_type">
+                                    <option value="external">外部链接</option>
+                                    <option value="linux_do">Linux.do</option>
+                                    <option value="nodeseek">NodeSeek</option>
+                                    <option value="wechat">微信公众号</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="urlSourceName" class="form-label">来源名称</label>
+                                <input type="text" class="form-control" id="urlSourceName" name="source_name" value="手动导入" placeholder="为这批链接设置一个来源名称">
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="urlCrawlBtn">
+                                保存到数据库
+                                <span class="spinner-border spinner-border-sm loading" id="urlCrawlLoading"></span>
+                            </button>
+                        </form>
+                        <div class="alert" id="urlCrawlAlert"></div>
+                    </div>
+                </div>
+
+                <!-- 内容采集 -->
+                <div class="card">
+                    <div class="card-header">🔍 内容采集</div>
+                    <div class="card-body">
+                        <p class="text-muted small">采集已存储链接的文章内容</p>
+                        <form id="contentCrawlForm">
+                            <div class="mb-3">
+                                <label for="contentSourceType" class="form-label">内容来源</label>
+                                <select class="form-control" id="contentSourceType" name="source_type">
+                                    <option value="">全部来源</option>
+                                    <option value="wechat">微信公众号</option>
+                                    <option value="linux_do">Linux.do</option>
+                                    <option value="nodeseek">NodeSeek</option>
+                                    <option value="external">外部链接</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contentLimit" class="form-label">采集数量限制</label>
+                                <input type="number" class="form-control" id="contentLimit" name="limit" value="50" min="1" max="200">
+                            </div>
+                            <div class="mb-3">
+                                <label for="contentBatchSize" class="form-label">批次大小</label>
+                                <input type="number" class="form-control" id="contentBatchSize" name="batch_size" value="5" min="1" max="10">
+                            </div>
+                            <button type="submit" class="btn btn-success" id="contentCrawlBtn">
+                                开始采集
+                                <span class="spinner-border spinner-border-sm loading" id="contentCrawlLoading"></span>
+                            </button>
+                        </form>
+                        <div class="alert" id="contentCrawlAlert"></div>
                     </div>
                 </div>
 
@@ -104,9 +171,9 @@
             </div>
 
             <div class="col-md-6">
-                <!-- 定期抓取 -->
+                <!-- 定期链接抓取 -->
                 <div class="card">
-                    <div class="card-header">定期抓取</div>
+                    <div class="card-header">⏰ 定期链接抓取</div>
                     <div class="card-body">
                         <form id="scheduleForm">
                             <div class="mb-3">
@@ -125,7 +192,7 @@
                                 <label class="form-label">每周几执行</label>
                                 <div class="d-flex flex-wrap">
                                     {% for day_num, day_name in [
-                                        (0, '周一'), (1, '周二'), (2, '周三'), 
+                                        (0, '周一'), (1, '周二'), (2, '周三'),
                                         (3, '周四'), (4, '周五'), (5, '周六'), (6, '周日')
                                     ] %}
                                     <div class="form-check me-3">
@@ -151,7 +218,7 @@
                                 <input type="number" class="form-control" id="scheduleLimit" name="limit" value="10" min="1" max="100">
                             </div>
 
-                            <button type="submit" class="btn btn-success" id="scheduleBtn">
+                            <button type="submit" class="btn btn-primary" id="scheduleBtn">
                                 设置定期抓取
                                 <span class="spinner-border spinner-border-sm loading" id="scheduleLoading"></span>
                             </button>
@@ -159,22 +226,84 @@
                         <div class="alert" id="scheduleAlert"></div>
                     </div>
                 </div>
+
+                <!-- 定期内容采集 -->
+                <div class="card">
+                    <div class="card-header">⏰ 定期内容采集</div>
+                    <div class="card-body">
+                        <form id="scheduleContentForm">
+                            <div class="mb-3">
+                                <label class="form-label">采集频率</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="schedule_type" id="scheduleContentDaily" value="daily" checked>
+                                    <label class="form-check-label" for="scheduleContentDaily">每天</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="schedule_type" id="scheduleContentWeekly" value="weekly">
+                                    <label class="form-check-label" for="scheduleContentWeekly">每周</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3" id="contentDaysSelector" style="display: none;">
+                                <label class="form-label">每周几执行</label>
+                                <div class="d-flex flex-wrap">
+                                    {% for day_num, day_name in [
+                                        (0, '周一'), (1, '周二'), (2, '周三'),
+                                        (3, '周四'), (4, '周五'), (5, '周六'), (6, '周日')
+                                    ] %}
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" name="days" value="{{ day_num }}" id="contentDay{{ day_num }}">
+                                        <label class="form-check-label" for="contentDay{{ day_num }}">{{ day_name }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleContentTime" class="form-label">执行时间</label>
+                                <input type="time" class="form-control" id="scheduleContentTime" name="time" value="10:00" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleContentSourceType" class="form-label">内容来源</label>
+                                <select class="form-control" id="scheduleContentSourceType" name="source_type">
+                                    <option value="">全部来源</option>
+                                    <option value="wechat">微信公众号</option>
+                                    <option value="linux_do">Linux.do</option>
+                                    <option value="nodeseek">NodeSeek</option>
+                                    <option value="external">外部链接</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleContentLimit" class="form-label">采集数量限制</label>
+                                <input type="number" class="form-control" id="scheduleContentLimit" name="limit" value="50" min="1" max="200">
+                            </div>
+
+                            <button type="submit" class="btn btn-success" id="scheduleContentBtn">
+                                设置定期采集
+                                <span class="spinner-border spinner-border-sm loading" id="scheduleContentLoading"></span>
+                            </button>
+                        </form>
+                        <div class="alert" id="scheduleContentAlert"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 已设置的定期抓取任务 -->
+        <!-- 已设置的定期任务 -->
         <div class="card mt-4">
-            <div class="card-header">已设置的定期抓取任务</div>
+            <div class="card-header">已设置的定期任务</div>
             <div class="card-body">
                 <div class="schedules-list">
                     {% if schedules %}
                     <table class="table table-striped">
                         <thead>
                             <tr>
+                                <th>任务类型</th>
                                 <th>频率</th>
                                 <th>时间</th>
-                                <th>公众号</th>
-                                <th>文章数量</th>
+                                <th>配置</th>
                                 <th>创建时间</th>
                                 <th>操作</th>
                             </tr>
@@ -183,9 +312,16 @@
                             {% for schedule in schedules %}
                             <tr>
                                 <td>
-                                    {% if schedule.type == 'daily' %}
+                                    {% if schedule.type == 'content_crawl' %}
+                                        <span class="badge bg-success">内容采集</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">链接抓取</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if schedule.schedule_type == 'daily' or schedule.type == 'daily' %}
                                         每天
-                                    {% elif schedule.type == 'weekly' %}
+                                    {% elif schedule.schedule_type == 'weekly' or schedule.type == 'weekly' %}
                                         每周
                                         {% for day in schedule.days %}
                                             {% if day == 0 %}一{% endif %}
@@ -199,8 +335,15 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ schedule.time }}</td>
-                                <td>{{ schedule.account or '全部' }}</td>
-                                <td>{{ schedule.limit }}</td>
+                                <td>
+                                    {% if schedule.type == 'content_crawl' %}
+                                        来源: {{ schedule.source_type or '全部' }}<br>
+                                        数量: {{ schedule.limit }}
+                                    {% else %}
+                                        公众号: {{ schedule.account or '全部' }}<br>
+                                        数量: {{ schedule.limit }}
+                                    {% endif %}
+                                </td>
                                 <td>{{ schedule.created_at }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-danger delete-schedule" data-id="{{ schedule.id }}">删除</button>
@@ -210,7 +353,7 @@
                         </tbody>
                     </table>
                     {% else %}
-                    <p class="text-muted">暂无定期抓取任务</p>
+                    <p class="text-muted">暂无定期任务</p>
                     {% endif %}
                 </div>
             </div>
@@ -263,12 +406,21 @@
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
-            // 切换每周选择器显示
+            // 切换每周选择器显示 - 链接抓取
             $('input[name="schedule_type"]').change(function() {
                 if ($(this).val() === 'weekly') {
                     $('#daysSelector').show();
                 } else {
                     $('#daysSelector').hide();
+                }
+            });
+
+            // 切换每周选择器显示 - 内容采集
+            $('#scheduleContentForm input[name="schedule_type"]').change(function() {
+                if ($(this).val() === 'weekly') {
+                    $('#contentDaysSelector').show();
+                } else {
+                    $('#contentDaysSelector').hide();
                 }
             });
 
@@ -311,7 +463,7 @@
                 const $btn = $(this);
                 const $loading = $('#updateCredLoading');
                 const $alert = $('#updateCredAlert');
-                
+
                 $btn.prop('disabled', true);
                 $loading.show();
                 $alert.hide();
@@ -338,13 +490,114 @@
                 });
             });
 
+            // 手动URL采集
+            $('#urlCrawlForm').submit(function(e) {
+                e.preventDefault();
+                const $btn = $('#urlCrawlBtn');
+                const $loading = $('#urlCrawlLoading');
+                const $alert = $('#urlCrawlAlert');
+
+                const urls = $('#urlInput').val().trim();
+                if (!urls) {
+                    $alert.removeClass('alert-success')
+                          .addClass('alert-danger')
+                          .text('请输入要采集的URL')
+                          .show();
+                    return;
+                }
+
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+
+                $.ajax({
+                    url: '/crawl_urls',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        let message = response.message;
+                        if (response.success && response.results) {
+                            const results = response.results;
+                            const successful = results.filter(r => r.status === 'success').length;
+                            const failed = results.filter(r => r.status === 'failed' || r.status === 'error').length;
+                            const skipped = results.filter(r => r.status === 'skipped').length;
+                            message += `<br><small>总计: ${results.length}个, 成功: ${successful}个, 失败: ${failed}个, 跳过: ${skipped}个</small>`;
+                        }
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .html(message)
+                              .show();
+
+                        if (response.success) {
+                            // 清空输入框
+                            $('#urlInput').val('');
+                            // 刷新页面以显示更新的统计
+                            setTimeout(() => location.reload(), 3000);
+                        }
+                    },
+                    error: function() {
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text('请求失败，请检查网络连接')
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                    }
+                });
+            });
+
+            // 内容采集
+            $('#contentCrawlForm').submit(function(e) {
+                e.preventDefault();
+                const $btn = $('#contentCrawlBtn');
+                const $loading = $('#contentCrawlLoading');
+                const $alert = $('#contentCrawlAlert');
+
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+
+                $.ajax({
+                    url: '/crawl_content',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        let message = response.message;
+                        if (response.success && response.stats) {
+                            message += `<br><small>处理: ${response.stats.total_processed || 0}, 成功: ${response.stats.successful || 0}, 失败: ${response.stats.failed || 0}</small>`;
+                        }
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .html(message)
+                              .show();
+
+                        if (response.success) {
+                            // 刷新页面以显示更新的统计
+                            setTimeout(() => location.reload(), 3000);
+                        }
+                    },
+                    error: function() {
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text('请求失败，请检查网络连接')
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                    }
+                });
+            });
+
             // 设置定期抓取
             $('#scheduleForm').submit(function(e) {
                 e.preventDefault();
                 const $btn = $('#scheduleBtn');
                 const $loading = $('#scheduleLoading');
                 const $alert = $('#scheduleAlert');
-                
+
                 $btn.prop('disabled', true);
                 $loading.show();
                 $alert.hide();
@@ -358,7 +611,48 @@
                               .addClass(response.success ? 'alert-success' : 'alert-danger')
                               .text(response.message)
                               .show();
-                        
+
+                        if (response.success) {
+                            // 刷新页面以显示新增的任务
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function() {
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text('请求失败，请检查网络连接')
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                    }
+                });
+            });
+
+            // 设置定期内容采集
+            $('#scheduleContentForm').submit(function(e) {
+                e.preventDefault();
+                const $btn = $('#scheduleContentBtn');
+                const $loading = $('#scheduleContentLoading');
+                const $alert = $('#scheduleContentAlert');
+
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+
+                $.ajax({
+                    url: '/schedule_content',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .text(response.message)
+                              .show();
+
                         if (response.success) {
                             // 刷新页面以显示新增的任务
                             setTimeout(function() {

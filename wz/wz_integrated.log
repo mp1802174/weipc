@@ -1,0 +1,95 @@
+2025-07-09 13:54:05,899 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 13:54:07,964 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 13:54:07,964 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 13:54:07,965 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 13:54:09,579 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 13:54:10,365 - core.database - INFO - 数据库连接已关闭
+2025-07-09 13:54:26,864 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 13:54:28,396 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 13:54:28,397 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 13:54:28,398 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 13:54:29,692 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 13:54:29,694 - cfcj.api - INFO - 数据库管理器初始化成功
+2025-07-09 13:54:29,694 - core.integrated_crawler - INFO - 集成采集器初始化成功
+2025-07-09 13:54:29,694 - core.integrated_crawler - INFO - 开始根据URL列表采集 - 数量: 1
+2025-07-09 13:54:38,292 - core.integrated_crawler - INFO - 开始采集文章: 待采集文章 - https://linux.do/t/topic/691581 (https://linux.do/t/topic/691581)
+2025-07-09 13:54:38,294 - cfcj.api - INFO - 数据库管理器初始化成功
+2025-07-09 13:54:38,294 - cfcj.api - INFO - 开始采集文章: https://linux.do/t/topic/691581
+2025-07-09 13:54:38,295 - cfcj.crawler - INFO - 启动浏览器，使用驱动: drission
+2025-07-09 13:54:38,295 - cfcj.crawler - INFO - 正在配置Chrome选项...
+2025-07-09 13:54:38,312 - cfcj.crawler - INFO - 正在启动Chrome浏览器...
+2025-07-09 13:54:42,729 - cfcj.crawler - INFO - Chrome浏览器启动成功
+2025-07-09 13:54:42,729 - cfcj.crawler - INFO - 正在加载保存的cookies...
+2025-07-09 13:54:42,730 - cfcj.crawler - INFO - Cookies加载准备完成
+2025-07-09 13:54:42,730 - cfcj.site_detector - INFO - 检测到站点类型: Linux.do (linux.do)
+2025-07-09 13:54:42,730 - cfcj.crawler - INFO - 正在访问: https://linux.do/t/topic/691581 (尝试 1/2)
+2025-07-09 13:54:42,731 - cfcj.crawler - INFO - 正在访问页面: https://linux.do/t/topic/691581
+2025-07-09 13:54:48,266 - cfcj.crawler - INFO - 页面访问成功，正在检查Cloudflare...
+2025-07-09 13:54:48,267 - cfcj.crawler - INFO - 检查Cloudflare验证状态...
+2025-07-09 13:54:59,568 - cfcj.crawler - INFO - 未检测到Cloudflare验证页面
+2025-07-09 13:55:03,583 - cfcj.crawler - INFO - 等待页面加载完成 (2秒)...
+2025-07-09 13:55:05,723 - cfcj.crawler - INFO - 页面内容获取成功，长度: 933075 字符
+2025-07-09 13:55:05,723 - cfcj.site_detector - INFO - 检测到站点类型: Linux.do (linux.do)
+2025-07-09 13:55:05,724 - cfcj.multi_site_extractor - INFO - 使用 Linux.do 专用提取器
+2025-07-09 13:55:10,132 - cfcj.database - INFO - 数据库表结构检查完成
+2025-07-09 13:55:10,772 - cfcj.database - INFO - 插入新文章: 在GPT Plus edu教育优惠关车门这天终于不依靠edu mail上车了
+2025-07-09 13:55:10,772 - cfcj.api - INFO - 文章已保存到数据库
+2025-07-09 13:55:10,772 - cfcj.api - INFO - 文章采集成功: 在GPT Plus edu教育优惠关车门这天终于不依靠edu mail上车了
+2025-07-09 13:55:10,776 - cfcj.auth - WARNING - 没有有效的cookies可保存
+2025-07-09 13:55:11,813 - cfcj.crawler - INFO - 浏览器已关闭
+2025-07-09 13:55:13,012 - core.integrated_crawler - ERROR - 文章采集失败: 待采集文章 - https://linux.do/t/topic/691581 - 未知错误
+2025-07-09 13:55:13,023 - core.database - INFO - 数据库连接已关闭
+2025-07-09 13:55:13,033 - core.integrated_crawler - INFO - 集成采集器资源清理完成
+2025-07-09 13:56:13,464 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 13:56:14,772 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 13:56:14,772 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 13:56:14,773 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 13:56:15,460 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 13:56:15,461 - cfcj.api - INFO - 数据库管理器初始化成功
+2025-07-09 13:56:15,462 - core.integrated_crawler - INFO - 集成采集器初始化成功
+2025-07-09 13:56:15,462 - core.integrated_crawler - INFO - 开始根据URL列表采集 - 数量: 1
+2025-07-09 13:56:16,290 - core.integrated_crawler - INFO - 文章已存在，跳过: https://linux.do/t/topic/691581
+2025-07-09 13:56:16,290 - core.database - INFO - 数据库连接已关闭
+2025-07-09 13:56:16,291 - core.integrated_crawler - INFO - 集成采集器资源清理完成
+2025-07-09 13:56:28,739 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 13:56:30,054 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 13:56:30,054 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 13:56:30,055 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 13:56:31,093 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 13:56:31,094 - cfcj.api - INFO - 数据库管理器初始化成功
+2025-07-09 13:56:31,094 - core.integrated_crawler - INFO - 集成采集器初始化成功
+2025-07-09 13:56:31,094 - core.integrated_crawler - INFO - 开始批量采集 - 源类型: linux_do, 限制: 5, 批次大小: 5
+2025-07-09 13:56:32,052 - core.integrated_crawler - INFO - 获取到0篇待采集文章
+2025-07-09 13:56:32,052 - core.integrated_crawler - INFO - 没有待采集的文章
+2025-07-09 13:56:32,053 - core.database - INFO - 数据库连接已关闭
+2025-07-09 13:56:32,053 - core.integrated_crawler - INFO - 集成采集器资源清理完成
+2025-07-09 14:22:17,033 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 14:22:19,027 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 14:22:19,027 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 14:22:19,029 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 14:22:19,813 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 14:22:20,522 - core.database - INFO - 数据库连接已关闭
+2025-07-09 14:22:34,259 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 14:23:03,638 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 14:23:05,178 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 14:23:05,179 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 14:23:05,180 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 14:23:06,075 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 14:23:06,076 - cfcj.api - INFO - 数据库管理器初始化成功
+2025-07-09 14:23:06,076 - core.integrated_crawler - INFO - 集成采集器初始化成功
+2025-07-09 14:23:06,077 - core.integrated_crawler - INFO - 开始根据URL列表采集 - 数量: 1
+2025-07-09 14:23:08,059 - core.integrated_crawler - INFO - 文章已存在，跳过: https://linux.do/t/topic/691581
+2025-07-09 14:23:08,060 - core.database - INFO - 数据库连接已关闭
+2025-07-09 14:23:08,061 - core.integrated_crawler - INFO - 集成采集器资源清理完成
+2025-07-09 14:23:25,820 - core.config - INFO - 配置已从 I:\kaifa\web\weipc\wz\config\config.json 加载
+2025-07-09 14:23:28,844 - mysql.connector.authentication - INFO - package: mysql.connector.plugins
+2025-07-09 14:23:28,845 - mysql.connector.authentication - INFO - plugin_name: mysql_native_password
+2025-07-09 14:23:28,847 - mysql.connector.authentication - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2025-07-09 14:23:30,027 - core.database - INFO - 数据库连接成功: 140.238.201.162:3306/cj
+2025-07-09 14:23:30,030 - cfcj.api - INFO - 数据库管理器初始化成功
+2025-07-09 14:23:30,030 - core.integrated_crawler - INFO - 集成采集器初始化成功
+2025-07-09 14:23:30,030 - core.integrated_crawler - INFO - 开始批量采集 - 源类型: linux_do, 限制: 5, 批次大小: 5
+2025-07-09 14:23:31,260 - core.integrated_crawler - INFO - 获取到0篇待采集文章
+2025-07-09 14:23:31,260 - core.integrated_crawler - INFO - 没有待采集的文章
+2025-07-09 14:23:31,261 - core.database - INFO - 数据库连接已关闭
+2025-07-09 14:23:31,262 - core.integrated_crawler - INFO - 集成采集器资源清理完成
