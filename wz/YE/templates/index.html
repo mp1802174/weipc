@@ -156,6 +156,37 @@
                     </div>
                 </div>
 
+                <!-- 论坛发布 -->
+                <div class="card">
+                    <div class="card-header">🚀 论坛发布</div>
+                    <div class="card-body">
+                        <p class="text-muted small">将微信文章批量发布到Discuz论坛</p>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>待发布文章:</span>
+                                <span id="pendingCount" class="badge bg-primary">检查中...</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <button class="btn btn-info btn-sm" id="checkStatusBtn">
+                                刷新状态
+                                <span class="spinner-border spinner-border-sm loading" id="checkStatusLoading"></span>
+                            </button>
+                        </div>
+                        <button class="btn btn-danger" id="batchPublishBtn" disabled>
+                            批量发布到论坛
+                            <span class="spinner-border spinner-border-sm loading" id="batchPublishLoading"></span>
+                        </button>
+                        <div class="alert" id="batchPublishAlert"></div>
+                        <div id="publishProgress" style="display: none;">
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="publishProgressBar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="publishStatus" class="text-muted">准备中...</small>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 更新凭证 -->
                 <div class="card">
                     <div class="card-header">更新凭证</div>
@@ -673,15 +704,122 @@
                 });
             });
 
+            // 检查论坛发布状态
+            function checkForumPublishStatus() {
+                $.ajax({
+                    url: '/forum_publish_status',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            const count = response.pending_count;
+                            $('#pendingCount').text(count + '篇');
+                            $('#batchPublishBtn').prop('disabled', count === 0);
+                            if (count === 0) {
+                                $('#batchPublishBtn').text('没有待发布文章');
+                            } else {
+                                $('#batchPublishBtn').text(`批量发布到论坛 (${count}篇)`);
+                            }
+                        } else {
+                            $('#pendingCount').text('检查失败');
+                        }
+                    },
+                    error: function() {
+                        $('#pendingCount').text('检查失败');
+                    }
+                });
+            }
+
+            // 页面加载时检查状态
+            checkForumPublishStatus();
+
+            // 刷新状态按钮
+            $('#checkStatusBtn').click(function() {
+                const $btn = $(this);
+                const $loading = $('#checkStatusLoading');
+
+                $btn.prop('disabled', true);
+                $loading.show();
+
+                checkForumPublishStatus();
+
+                setTimeout(function() {
+                    $btn.prop('disabled', false);
+                    $loading.hide();
+                }, 1000);
+            });
+
+            // 批量发布到论坛
+            $('#batchPublishBtn').click(function() {
+                if (!confirm('确定要批量发布所有待发布文章到论坛吗？\n\n注意：发布过程可能需要几分钟时间，每篇文章之间会有60-120秒的随机间隔。')) {
+                    return;
+                }
+
+                const $btn = $(this);
+                const $loading = $('#batchPublishLoading');
+                const $alert = $('#batchPublishAlert');
+                const $progress = $('#publishProgress');
+                const $progressBar = $('#publishProgressBar');
+                const $status = $('#publishStatus');
+
+                $btn.prop('disabled', true);
+                $loading.show();
+                $alert.hide();
+                $progress.show();
+                $progressBar.css('width', '0%');
+                $status.text('开始发布...');
+
+                $.ajax({
+                    url: '/batch_publish_forum',
+                    type: 'POST',
+                    timeout: 600000, // 10分钟超时
+                    success: function(response) {
+                        $alert.removeClass('alert-success alert-danger')
+                              .addClass(response.success ? 'alert-success' : 'alert-danger')
+                              .text(response.message)
+                              .show();
+
+                        if (response.success) {
+                            $progressBar.css('width', '100%');
+                            $status.text(`发布完成: 成功${response.success_count}篇, 失败${response.failed_count}篇`);
+
+                            // 刷新状态
+                            setTimeout(function() {
+                                checkForumPublishStatus();
+                            }, 2000);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMsg = '发布失败';
+                        if (status === 'timeout') {
+                            errorMsg = '发布超时，请检查发布状态';
+                        } else {
+                            errorMsg = '发布过程中出错: ' + error;
+                        }
+
+                        $alert.removeClass('alert-success')
+                              .addClass('alert-danger')
+                              .text(errorMsg)
+                              .show();
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                        $loading.hide();
+                        setTimeout(function() {
+                            $progress.hide();
+                        }, 5000);
+                    }
+                });
+            });
+
             // 删除定期抓取任务
             $('.delete-schedule').click(function() {
                 if (!confirm('确定要删除这个定期抓取任务吗？')) {
                     return;
                 }
-                
+
                 const $btn = $(this);
                 $btn.prop('disabled', true).text('删除中...');
-                
+
                 $.ajax({
                     url: '/delete_schedule',
                     type: 'POST',

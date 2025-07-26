@@ -51,6 +51,15 @@ except ImportError as e:
     UnifiedDatabaseManager = None
     CrawlStatus = None
 
+# 导入论坛发布模块
+try:
+    from fabu.batch_publisher import BatchPublisher
+    from fabu.forum_publisher import ForumPublisher
+except ImportError as e:
+    print(f"警告: 未找到论坛发布模块，论坛发布功能可能无法正常工作: {e}")
+    BatchPublisher = None
+    ForumPublisher = None
+
 # 配置日志
 log_dir = os.path.join(BASE_DIR, 'logs')
 os.makedirs(log_dir, exist_ok=True)
@@ -875,16 +884,16 @@ def view_articles():
     try:
         from wzzq.db import DatabaseManager
         db = DatabaseManager()
-        
+
         limit = request.args.get('limit', 100, type=int)
-        
+
         account = request.args.get('account', None)
-        
+
         if account:
             query = """
-            SELECT a.id, a.title, a.article_url as link, a.publish_timestamp as publish_time, 
+            SELECT a.id, a.title, a.article_url as link, a.publish_timestamp as publish_time,
                    a.account_name as author, a.fetched_at as update_time,
-                   NULL as cover_url
+                   a.forum_published, NULL as cover_url
             FROM wechat_articles a
             WHERE a.account_name = %s
             ORDER BY a.publish_timestamp DESC
@@ -893,26 +902,90 @@ def view_articles():
             articles = db.query(query, (account, limit))
         else:
             query = """
-            SELECT a.id, a.title, a.article_url as link, a.publish_timestamp as publish_time, 
+            SELECT a.id, a.title, a.article_url as link, a.publish_timestamp as publish_time,
                    a.account_name as author, a.fetched_at as update_time,
-                   NULL as cover_url
+                   a.forum_published, NULL as cover_url
             FROM wechat_articles a
             ORDER BY a.publish_timestamp DESC
             LIMIT %s
             """
             articles = db.query(query, (limit,))
-        
+
         for article in articles:
             if isinstance(article['publish_time'], datetime.datetime):
                 article['publish_time'] = article['publish_time'].strftime("%Y-%m-%d %H:%M:%S")
             if isinstance(article['update_time'], datetime.datetime):
                 article['update_time'] = article['update_time'].strftime("%Y-%m-%d %H:%M:%S")
-        
+
         return render_template('articles.html', articles=articles, account=account)
-    
+
     except Exception as e:
         logger.error(f"获取文章列表失败: {e}")
         return render_template('error.html', error_message=f"获取文章列表失败: {e}")
+
+@app.route('/forum_publish_status', methods=['GET'])
+def forum_publish_status():
+    """获取论坛发布状态"""
+    if ForumPublisher is None:
+        return jsonify({
+            'success': False,
+            'message': '论坛发布模块未加载'
+        })
+
+    try:
+        publisher = ForumPublisher()
+        pending_articles = publisher.get_pending_articles()
+
+        return jsonify({
+            'success': True,
+            'pending_count': len(pending_articles),
+            'pending_articles': [
+                {
+                    'id': article['id'],
+                    'title': article['title'],
+                    'account_name': article['account_name']
+                }
+                for article in pending_articles[:10]
+            ]
+        })
+
+    except Exception as e:
+        logger.error(f"获取论坛发布状态失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'获取状态失败: {str(e)}'
+        })
+
+@app.route('/batch_publish_forum', methods=['POST'])
+def batch_publish_forum():
+    """批量发布文章到论坛"""
+    if BatchPublisher is None:
+        return jsonify({
+            'success': False,
+            'message': '论坛发布模块未加载'
+        })
+
+    try:
+        batch_publisher = BatchPublisher()
+
+        # 执行批量发布
+        result = batch_publisher.publish_all()
+
+        return jsonify({
+            'success': True,
+            'message': f'批量发布完成: 总计{result["total"]}篇, 成功{result["success"]}篇, 失败{result["failed"]}篇',
+            'total': result['total'],
+            'success_count': result['success'],
+            'failed_count': result['failed'],
+            'details': result['details']
+        })
+
+    except Exception as e:
+        logger.error(f"批量发布失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'批量发布失败: {str(e)}'
+        })
 
 def init_scheduler():
     """初始化调度器并加载所有计划任务"""
