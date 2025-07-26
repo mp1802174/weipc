@@ -26,8 +26,8 @@ import datetime
 class DatabaseManager:
     """MySQL数据库管理类，用于连接数据库并执行查询"""
     
-    def __init__(self, host="140.238.201.162", port=3306, user="cj", password="760516",
-                 database="cj", charset="utf8mb4"):
+    def __init__(self, host=None, port=None, user=None, password=None,
+                 database=None, charset=None):
         """
         初始化数据库连接
         
@@ -39,14 +39,37 @@ class DatabaseManager:
             database: 数据库名
             charset: 字符集
         """
-        self.config = {
-            'host': host,
-            'port': port,
-            'user': user,
-            'password': password,
-            'database': database,
-            'charset': charset,
-        }
+        # 如果没有提供参数，从配置文件加载
+        if host is None:
+            try:
+                import sys
+                from pathlib import Path
+                sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+                from config_manager import get_database_config
+
+                db_config = get_database_config('wz_database')
+                self.config = db_config.copy()
+            except Exception as e:
+                # 配置加载失败时的默认配置
+                self.config = {
+                    'host': 'localhost',
+                    'port': 3306,
+                    'user': 'root',
+                    'password': '',
+                    'database': 'wz',
+                    'charset': 'utf8mb4'
+                }
+                print(f"警告: 无法加载数据库配置，使用默认配置: {e}")
+        else:
+            # 使用提供的参数
+            self.config = {
+                'host': host,
+                'port': port,
+                'user': user,
+                'password': password,
+                'database': database,
+                'charset': charset or 'utf8mb4',
+            }
         
         # 根据实际使用的库添加特定配置
         if USING_PYMYSQL:

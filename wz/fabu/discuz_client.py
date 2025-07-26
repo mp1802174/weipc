@@ -7,9 +7,16 @@ Discuz数据库客户端
 
 import mysql.connector
 import time
+import sys
+import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 import logging
+
+# 添加config目录到路径
+sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+from config_manager import get_database_config, get_forum_config
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +25,25 @@ class DiscuzClient:
     
     def __init__(self):
         """初始化Discuz客户端"""
-        self.config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': '00077',
-            'password': '760516',
-            'database': '00077',
-            'charset': 'utf8mb4'
-        }
+        try:
+            self.config = get_database_config('discuz_database')
+            self.forum_config = get_forum_config()
+        except Exception as e:
+            logger.warning(f"无法加载配置文件，使用默认配置: {e}")
+            # 使用默认配置作为备用
+            self.config = {
+                'host': '140.238.201.162',
+                'port': 3306,
+                'user': '00077',
+                'password': '760516',
+                'database': '00077',
+                'charset': 'utf8mb4'
+            }
+            self.forum_config = {
+                'target_forum_id': 2,
+                'publisher_user_id': 4,
+                'publisher_username': '砂鱼'
+            }
         self.connection = None
     
     def connect(self) -> bool:

@@ -11,17 +11,30 @@
     "language": "zh_CN"
   },
   "database": {
-    "host": "140.238.201.162",
-    "port": 3306,
-    "user": "cj",
-    "password": "760516",
-    "database": "cj",
-    "charset": "utf8mb4",
-    "autocommit": true,
-    "pool_size": 10,
-    "max_overflow": 20,
-    "pool_timeout": 30,
-    "pool_recycle": 3600
+    "wz_database": {
+      "host": "140.238.201.162",
+      "port": 3306,
+      "user": "cj",
+      "password": "760516",
+      "database": "cj",
+      "charset": "utf8mb4",
+      "autocommit": true,
+      "pool_size": 10,
+      "max_overflow": 20,
+      "pool_timeout": 30,
+      "pool_recycle": 3600,
+      "description": "WZ系统主数据库，存储微信文章等数据"
+    },
+    "discuz_database": {
+      "host": "140.238.201.162",
+      "port": 3306,
+      "user": "00077",
+      "password": "760516",
+      "database": "00077",
+      "charset": "utf8mb4",
+      "autocommit": true,
+      "description": "Discuz论坛数据库，用于发布文章到论坛"
+    }
   },
   "wechat": {
     "enabled": true,
@@ -50,6 +63,19 @@
     "request_delay": 2,
     "batch_size": 5,
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  "forum_publisher": {
+    "enabled": true,
+    "target_forum_id": 2,
+    "target_forum_name": "砂舞分享",
+    "publisher_user_id": 4,
+    "publisher_username": "砂鱼",
+    "batch_size": 100,
+    "interval_min": 60,
+    "interval_max": 120,
+    "retry_times": 1,
+    "timeout": 3600,
+    "description": "论坛发布模块配置"
   },
   "publisher": {
     "enabled": false,

@@ -28,13 +28,32 @@ class ConfigType(Enum):
 @dataclass
 class DatabaseConfig:
     """数据库配置"""
-    host: str = "140.238.201.162"
+    host: str = ""
     port: int = 3306
-    user: str = "cj"
-    password: str = "760516"
-    database: str = "cj"
+    user: str = ""
+    password: str = ""
+    database: str = ""
     charset: str = "utf8mb4"
     autocommit: bool = True
+
+    def __post_init__(self):
+        """从配置文件加载数据库配置"""
+        try:
+            import sys
+            from pathlib import Path
+            sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+            from config_manager import get_database_config
+
+            config = get_database_config('wz_database')
+            self.host = config.get('host', '')
+            self.port = config.get('port', 3306)
+            self.user = config.get('user', '')
+            self.password = config.get('password', '')
+            self.database = config.get('database', '')
+            self.charset = config.get('charset', 'utf8mb4')
+        except Exception:
+            # 如果配置加载失败，保持默认空值
+            pass
     pool_size: int = 10
     max_overflow: int = 20
     pool_timeout: int = 30

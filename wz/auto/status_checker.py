@@ -7,8 +7,14 @@
 
 import mysql.connector
 import logging
+import sys
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+
+# 添加config目录到路径
+sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+from config_manager import get_database_config, get_forum_config
 
 logger = logging.getLogger(__name__)
 
@@ -17,25 +23,38 @@ class StatusChecker:
     
     def __init__(self):
         """初始化状态检测器"""
-        # WZ数据库配置
-        self.wz_config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': 'cj',
-            'password': '760516',
-            'database': 'cj',
-            'charset': 'utf8mb4'
-        }
-        
-        # Discuz数据库配置
-        self.discuz_config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': '00077',
-            'password': '760516',
-            'database': '00077',
-            'charset': 'utf8mb4'
-        }
+        try:
+            # 从配置文件加载数据库配置
+            self.wz_config = get_database_config('wz_database')
+            self.discuz_config = get_database_config('discuz_database')
+            self.forum_config = get_forum_config()
+        except Exception as e:
+            logger.warning(f"无法加载配置文件，使用默认配置: {e}")
+            # 使用默认配置作为备用
+            self.wz_config = {
+                'host': '140.238.201.162',
+                'port': 3306,
+                'user': 'cj',
+                'password': '760516',
+                'database': 'cj',
+                'charset': 'utf8mb4'
+            }
+
+            # Discuz数据库配置
+            self.discuz_config = {
+                'host': '140.238.201.162',
+                'port': 3306,
+                'user': '00077',
+                'password': '760516',
+                'database': '00077',
+                'charset': 'utf8mb4'
+            }
+
+            self.forum_config = {
+                'target_forum_id': 2,
+                'publisher_user_id': 4,
+                'publisher_username': '砂鱼'
+            }
     
     def check_link_crawl_status(self, config: Dict) -> Dict:
         """

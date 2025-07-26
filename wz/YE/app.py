@@ -487,14 +487,24 @@ def save_urls_to_database(urls, source_type='external', source_name='手动导�
     import re
 
     # 数据库配置
-    db_config = {
-        'host': '140.238.201.162',
-        'port': 3306,
-        'user': 'cj',
-        'password': '760516',
-        'database': 'cj',
-        'charset': 'utf8mb4'
-    }
+    try:
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+        from config_manager import get_database_config
+
+        db_config = get_database_config('wz_database')
+    except Exception as e:
+        logger.error(f"无法加载数据库配置: {e}")
+        # 使用默认配置
+        db_config = {
+            'host': 'localhost',
+            'port': 3306,
+            'user': 'root',
+            'password': '',
+            'database': 'wz',
+            'charset': 'utf8mb4'
+        }
 
     def detect_source_type_from_url(url):
         """根据URL自动检测来源类型"""

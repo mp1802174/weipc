@@ -7,7 +7,13 @@
 
 import mysql.connector
 import logging
+import sys
+from pathlib import Path
 from typing import Dict, Optional
+
+# 添加config目录到路径
+sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+from config_manager import get_database_config, get_forum_config
 
 try:
     from .discuz_client import DiscuzClient
@@ -21,21 +27,34 @@ class ForumPublisher:
     
     def __init__(self):
         """初始化发布器"""
-        self.wz_config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': 'cj',
-            'password': '760516',
-            'database': 'cj',
-            'charset': 'utf8mb4'
-        }
-        
-        # 发布配置
-        self.publish_config = {
-            'fid': 2,           # 目标版块ID
-            'author': '砂鱼',    # 发布用户名
-            'authorid': 4       # 发布用户ID
-        }
+        try:
+            self.wz_config = get_database_config('wz_database')
+            forum_config = get_forum_config()
+
+            # 发布配置
+            self.publish_config = {
+                'fid': forum_config.get('target_forum_id', 2),
+                'author': forum_config.get('publisher_username', '砂鱼'),
+                'authorid': forum_config.get('publisher_user_id', 4)
+            }
+        except Exception as e:
+            logger.warning(f"无法加载配置文件，使用默认配置: {e}")
+            # 使用默认配置作为备用
+            self.wz_config = {
+                'host': '140.238.201.162',
+                'port': 3306,
+                'user': 'cj',
+                'password': '760516',
+                'database': 'cj',
+                'charset': 'utf8mb4'
+            }
+
+            # 发布配置
+            self.publish_config = {
+                'fid': 2,           # 目标版块ID
+                'author': '砂鱼',    # 发布用户名
+                'authorid': 4       # 发布用户ID
+            }
     
     def get_article_by_id(self, article_id: int) -> Optional[Dict]:
         """从WZ数据库获取文章信息"""

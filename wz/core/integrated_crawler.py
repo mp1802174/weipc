@@ -93,14 +93,20 @@ class IntegratedCrawler:
         from datetime import datetime
 
         # 数据库配置
-        db_config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': 'cj',
-            'password': '760516',
-            'database': 'cj',
-            'charset': 'utf8mb4'
-        }
+        try:
+            sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+            from config_manager import get_database_config
+            db_config = get_database_config('wz_database')
+        except Exception as e:
+            logger.warning(f"无法加载数据库配置，使用默认配置: {e}")
+            db_config = {
+                'host': 'localhost',
+                'port': 3306,
+                'user': 'root',
+                'password': '',
+                'database': 'wz',
+                'charset': 'utf8mb4'
+            }
 
         articles = []
 
@@ -216,14 +222,20 @@ class IntegratedCrawler:
         import mysql.connector
         from datetime import datetime
 
-        db_config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': 'cj',
-            'password': '760516',
-            'database': 'cj',
-            'charset': 'utf8mb4'
-        }
+        try:
+            sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+            from config_manager import get_database_config
+            db_config = get_database_config('wz_database')
+        except Exception as e:
+            logger.warning(f"无法加载数据库配置，使用默认配置: {e}")
+            db_config = {
+                'host': 'localhost',
+                'port': 3306,
+                'user': 'root',
+                'password': '',
+                'database': 'wz',
+                'charset': 'utf8mb4'
+            }
 
         try:
             conn = mysql.connector.connect(**db_config)
@@ -253,14 +265,20 @@ class IntegratedCrawler:
         import json
         from datetime import datetime
 
-        db_config = {
-            'host': '140.238.201.162',
-            'port': 3306,
-            'user': 'cj',
-            'password': '760516',
-            'database': 'cj',
-            'charset': 'utf8mb4'
-        }
+        try:
+            sys.path.insert(0, str(Path(__file__).parent.parent / 'config'))
+            from config_manager import get_database_config
+            db_config = get_database_config('wz_database')
+        except Exception as e:
+            logger.warning(f"无法加载数据库配置，使用默认配置: {e}")
+            db_config = {
+                'host': 'localhost',
+                'port': 3306,
+                'user': 'root',
+                'password': '',
+                'database': 'wz',
+                'charset': 'utf8mb4'
+            }
 
         try:
             conn = mysql.connector.connect(**db_config)

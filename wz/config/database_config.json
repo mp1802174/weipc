@@ -1,0 +1,27 @@
+{
+  "wz_database": {
+    "host": "140.238.201.162",
+    "port": 3306,
+    "user": "cj",
+    "password": "760516",
+    "database": "cj",
+    "charset": "utf8mb4",
+    "description": "WZ系统主数据库，存储微信文章等数据"
+  },
+  "discuz_database": {
+    "host": "140.238.201.162",
+    "port": 3306,
+    "user": "00077",
+    "password": "760516",
+    "database": "00077",
+    "charset": "utf8mb4",
+    "description": "Discuz论坛数据库，用于发布文章到论坛"
+  },
+  "forum_config": {
+    "target_forum_id": 2,
+    "target_forum_name": "砂舞分享",
+    "publisher_user_id": 4,
+    "publisher_username": "砂鱼",
+    "description": "论坛发布相关配置"
+  }
+}
