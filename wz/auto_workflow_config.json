@@ -1,0 +1,51 @@
+{
+  "schedule": {
+    "enabled": true,
+    "time": "01:00",
+    "timezone": "Asia/Shanghai"
+  },
+  "steps": {
+    "link_crawl": {
+      "enabled": true,
+      "timeout": 600,
+      "retry_count": 2,
+      "params": {
+        "limit_per_account": 10,
+        "total_limit": 50,
+        "accounts": ["all"],
+        "skip_existing": true
+      }
+    },
+    "content_crawl": {
+      "enabled": true,
+      "timeout": 1800,
+      "retry_count": 1,
+      "params": {
+        "limit": 50,
+        "batch_size": 5,
+        "source_types": ["wechat"]
+      }
+    },
+    "forum_publish": {
+      "enabled": true,
+      "timeout": 3600,
+      "retry_count": 1,
+      "params": {
+        "limit": 100,
+        "interval_min": 60,
+        "interval_max": 120
+      }
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "console": true,
+    "file": true,
+    "max_days": 30
+  },
+  "notifications": {
+    "enabled": false,
+    "email": "",
+    "webhook": ""
+  }
+}

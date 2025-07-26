@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+步骤执行器
+负责执行各个工作流步骤
+"""
+
+import sys
+import os
+import time
+import logging
+from typing import Dict, Any, Optional
+from pathlib import Path
+
+# 添加父目录到路径以便导入其他模块
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+logger = logging.getLogger(__name__)
+
+class StepExecutor:
+    """步骤执行器"""
+    
+    def __init__(self):
+        """初始化步骤执行器"""
+        self.current_step = None
+        self.step_start_time = None
+    
+    def execute_link_crawl(self, params: Dict) -> Dict:
+        """
+        执行链接采集步骤
+        
+        Args:
+            params: 采集参数
+            
+        Returns:
+            Dict: 执行结果
+        """
+        result = {
+            'success': False,
+            'message': '',
+            'details': {},
+            'new_articles': 0
+        }
+        
+        try:
+            logger.info("开始执行链接采集...")
+            
+            # 导入微信采集模块
+            try:
+                from wzzq.wechat_crawler import WeChatCrawler
+            except ImportError as e:
+                result['message'] = f'无法导入微信采集模块: {e}'
+                return result
+            
+            # 获取参数
+            limit_per_account = params.get('limit_per_account', 10)
+            total_limit = params.get('total_limit', 50)
+            accounts = params.get('accounts', ['all'])
+            
+            # 如果是 'all'，获取所有配置的公众号
+            if 'all' in accounts:
+                accounts = ['舞林攻略指南', '人类砂舞行为研究', '砂砂之家']
+            
+            crawler = WeChatCrawler()
+            total_new = 0
+            account_results = {}
+            
+            for account in accounts:
+                if total_new >= total_limit:
+                    break
+                
+                logger.info(f"采集公众号: {account}")
+                
+                # 计算该账号的采集限制
+                remaining_limit = min(limit_per_account, total_limit - total_new)
+                
+                try:
+                    # 执行采集
+                    account_result = crawler.crawl_account(account, limit=remaining_limit)
+                    new_count = account_result.get('new_articles', 0)
+                    
+                    account_results[account] = {
+                        'new_articles': new_count,
+                        'total_articles': account_result.get('total_articles', 0),
+                        'success': True
+                    }
+                    
+                    total_new += new_count
+                    logger.info(f"公众号 {account} 采集完成: 新增{new_count}篇")
+                    
+                except Exception as e:
+                    logger.error(f"采集公众号 {account} 失败: {e}")
+                    account_results[account] = {
+                        'new_articles': 0,
+                        'error': str(e),
+                        'success': False
+                    }
+            
+            result['success'] = True
+            result['message'] = f'链接采集完成，共获取{total_new}篇新文章'
+            result['new_articles'] = total_new
+            result['details'] = {
+                'accounts': account_results,
+                'total_limit': total_limit,
+                'limit_per_account': limit_per_account
+            }
+            
+        except Exception as e:
+            logger.error(f"链接采集执行失败: {e}")
+            result['message'] = f'链接采集执行失败: {str(e)}'
+        
+        return result
+    
+    def execute_content_crawl(self, params: Dict) -> Dict:
+        """
+        执行内容采集步骤
+        
+        Args:
+            params: 采集参数
+            
+        Returns:
+            Dict: 执行结果
+        """
+        result = {
+            'success': False,
+            'message': '',
+            'details': {},
+            'processed_articles': 0
+        }
+        
+        try:
+            logger.info("开始执行内容采集...")
+            
+            # 导入内容采集模块
+            try:
+                from core.integrated_crawler import IntegratedCrawler
+            except ImportError as e:
+                result['message'] = f'无法导入内容采集模块: {e}'
+                return result
+            
+            # 获取参数
+            limit = params.get('limit', 50)
+            batch_size = params.get('batch_size', 5)
+            source_types = params.get('source_types', ['wechat'])
+            
+            crawler = IntegratedCrawler()
+            
+            # 执行内容采集
+            crawl_result = crawler.crawl_content(
+                limit=limit,
+                batch_size=batch_size,
+                source_types=source_types
+            )
+            
+            if crawl_result.get('success', False):
+                result['success'] = True
+                result['message'] = f'内容采集完成，处理{crawl_result.get("processed", 0)}篇文章'
+                result['processed_articles'] = crawl_result.get('processed', 0)
+                result['details'] = {
+                    'successful': crawl_result.get('successful', 0),
+                    'failed': crawl_result.get('failed', 0),
+                    'limit': limit,
+                    'batch_size': batch_size
+                }
+            else:
+                result['message'] = f'内容采集失败: {crawl_result.get("message", "未知错误")}'
+            
+        except Exception as e:
+            logger.error(f"内容采集执行失败: {e}")
+            result['message'] = f'内容采集执行失败: {str(e)}'
+        
+        return result
+    
+    def execute_forum_publish(self, params: Dict) -> Dict:
+        """
+        执行论坛发布步骤
+        
+        Args:
+            params: 发布参数
+            
+        Returns:
+            Dict: 执行结果
+        """
+        result = {
+            'success': False,
+            'message': '',
+            'details': {},
+            'published_articles': 0
+        }
+        
+        try:
+            logger.info("开始执行论坛发布...")
+            
+            # 导入论坛发布模块
+            try:
+                from fabu.batch_publisher import BatchPublisher
+            except ImportError as e:
+                result['message'] = f'无法导入论坛发布模块: {e}'
+                return result
+            
+            # 获取参数
+            limit = params.get('limit', 100)
+            interval_min = params.get('interval_min', 60)
+            interval_max = params.get('interval_max', 120)
+            
+            # 创建批量发布器
+            publisher = BatchPublisher()
+            
+            # 设置发布间隔
+            publisher.min_interval = interval_min
+            publisher.max_interval = interval_max
+            
+            # 执行批量发布
+            publish_result = publisher.publish_all()
+            
+            if publish_result.get('total', 0) > 0:
+                success_count = publish_result.get('success', 0)
+                failed_count = publish_result.get('failed', 0)
+                
+                result['success'] = True
+                result['message'] = f'论坛发布完成，成功{success_count}篇，失败{failed_count}篇'
+                result['published_articles'] = success_count
+                result['details'] = {
+                    'total': publish_result.get('total', 0),
+                    'success': success_count,
+                    'failed': failed_count,
+                    'duration': publish_result.get('end_time', 0) - publish_result.get('start_time', 0)
+                }
+            else:
+                result['success'] = True
+                result['message'] = '没有待发布的文章'
+                result['published_articles'] = 0
+            
+        except Exception as e:
+            logger.error(f"论坛发布执行失败: {e}")
+            result['message'] = f'论坛发布执行失败: {str(e)}'
+        
+        return result
+    
+    def execute_step(self, step_name: str, step_config: Dict, timeout: Optional[int] = None) -> Dict:
+        """
+        执行指定步骤
+        
+        Args:
+            step_name: 步骤名称
+            step_config: 步骤配置
+            timeout: 超时时间（秒）
+            
+        Returns:
+            Dict: 执行结果
+        """
+        self.current_step = step_name
+        self.step_start_time = time.time()
+        
+        logger.info(f"开始执行步骤: {step_name}")
+        
+        try:
+            # 获取步骤参数
+            params = step_config.get('params', {})
+            step_timeout = timeout or step_config.get('timeout', 3600)
+            
+            # 根据步骤名称执行相应的方法
+            if step_name == 'link_crawl':
+                result = self.execute_link_crawl(params)
+            elif step_name == 'content_crawl':
+                result = self.execute_content_crawl(params)
+            elif step_name == 'forum_publish':
+                result = self.execute_forum_publish(params)
+            else:
+                result = {
+                    'success': False,
+                    'message': f'未知步骤: {step_name}'
+                }
+            
+            # 添加执行时间信息
+            execution_time = time.time() - self.step_start_time
+            result['execution_time'] = execution_time
+            
+            logger.info(f"步骤 {step_name} 执行完成，耗时 {execution_time:.1f} 秒")
+            
+            return result
+            
+        except Exception as e:
+            execution_time = time.time() - self.step_start_time
+            logger.error(f"步骤 {step_name} 执行异常: {e}")
+            
+            return {
+                'success': False,
+                'message': f'步骤执行异常: {str(e)}',
+                'execution_time': execution_time
+            }
+        
+        finally:
+            self.current_step = None
+            self.step_start_time = None
