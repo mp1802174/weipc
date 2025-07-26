@@ -13,3 +13,7 @@ werkzeug>=2.2.3
 
 # DrissionPage (用于微信公众号登录认证)
 DrissionPage>=4.0.0 
+# 文章内容采集配置简易指南
+# 文章内容采集配置简易指南
+trafilatura
+newspaper3k

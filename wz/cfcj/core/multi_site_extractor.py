@@ -10,6 +10,7 @@ import logging
 from urllib.parse import urljoin, urlparse
 
 from .site_detector import SiteDetector
+from .wechat_content_optimizer import optimize_wechat_content
 
 
 class MultiSiteExtractor:
@@ -128,13 +129,49 @@ class MultiSiteExtractor:
         return article_data
     
     def _extract_wechat_mp(self, html: str, url: str, site_info: Dict[str, Any]) -> Dict[str, Any]:
-        """提取微信公众号内容"""
+        """提取微信公众号内容 - 使用优化的提取方法"""
+        self.logger.info(f"使用优化的微信内容提取器: {url}")
+
+        try:
+            # 使用新的优化提取器
+            result = optimize_wechat_content(url)
+
+            if result['success']:
+                # 转换为标准格式
+                article_data = {
+                    'url': url,
+                    'title': result.get('title', ''),
+                    'content': result.get('content', ''),
+                    'author': '',  # 优化器暂时不提取作者信息
+                    'publish_time': '',  # 优化器暂时不提取时间信息
+                    'word_count': result.get('word_count', 0),
+                    'extracted_at': datetime.now().isoformat(),
+                    'site_name': site_info['site_name'],
+                    'extraction_method': result.get('method', 'optimized'),
+                    'original_word_count': result.get('original_word_count', 0),
+                    'cleaning_ratio': result.get('cleaning_ratio', 0)
+                }
+
+                self.logger.info(f"优化提取成功: {article_data['word_count']} 字符 (清理率: {article_data['cleaning_ratio']*100:.1f}%)")
+                return article_data
+            else:
+                # 优化提取失败，回退到原有方法
+                self.logger.warning(f"优化提取失败，回退到原有方法: {result.get('error', '未知错误')}")
+                return self._extract_wechat_mp_fallback(html, url, site_info)
+
+        except Exception as e:
+            # 异常情况，回退到原有方法
+            self.logger.error(f"优化提取异常，回退到原有方法: {e}")
+            return self._extract_wechat_mp_fallback(html, url, site_info)
+
+    def _extract_wechat_mp_fallback(self, html: str, url: str, site_info: Dict[str, Any]) -> Dict[str, Any]:
+        """微信公众号内容提取的回退方法（原有逻辑）"""
         soup = BeautifulSoup(html, 'html.parser')
         extraction_config = site_info['extraction']
-        
+
         # 移除无关元素
         self._remove_unwanted_elements(soup, extraction_config.get('exclude_selectors', []))
-        
+
         # 先提取作者信息，用于后续的差异化处理
         author = self._extract_author_with_selectors(soup, extraction_config.get('author_selectors', []))
 
@@ -149,11 +186,9 @@ class MultiSiteExtractor:
             'publish_time': self._extract_time_with_selectors(soup, extraction_config.get('time_selectors', [])),
             'word_count': 0,
             'extracted_at': datetime.now().isoformat(),
-            'site_name': site_info['site_name']
+            'site_name': site_info['site_name'],
+            'extraction_method': 'fallback'
         }
-
-        # 不再单独提取图片信息，图片已集成在content中
-        # article_data['images'] = self._extract_images(soup, url, extraction_config)
 
         # 计算字数
         if article_data['content']:

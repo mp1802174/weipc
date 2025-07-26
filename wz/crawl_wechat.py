@@ -6,6 +6,12 @@
 
 import sys
 import os
+import io
+
+# 设置标准输出编码为UTF-8，解决Windows下的编码问题
+if sys.platform.startswith('win'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # 确保WZ目录在sys.path中
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,4 +22,9 @@ if script_dir not in sys.path:
 from wzzq.main import main
 
 if __name__ == '__main__':
-    sys.exit(main()) 
+    try:
+        exit_code = main()
+        sys.exit(exit_code)
+    except Exception as e:
+        print(f"执行失败: {e}", file=sys.stderr)
+        sys.exit(1)
