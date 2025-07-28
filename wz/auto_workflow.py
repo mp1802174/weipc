@@ -194,6 +194,8 @@ def main():
                        help='只检查状态，不执行')
     parser.add_argument('--list-resumable', action='store_true',
                        help='列出可恢复的执行')
+    parser.add_argument('--github-actions', action='store_true',
+                       help='GitHub Actions模式，使用环境变量配置')
     
     # 数量控制
     parser.add_argument('--link-limit', type=int,
@@ -214,6 +216,30 @@ def main():
     print_banner()
     
     try:
+        # GitHub Actions模式处理
+        if args.github_actions:
+            # 使用GitHub Actions专用脚本
+            import subprocess
+            import sys
+
+            github_script = Path(__file__).parent / "github_auto_workflow.py"
+            cmd = [sys.executable, str(github_script)]
+
+            if args.steps:
+                cmd.extend(['--steps', args.steps])
+            if args.link_limit:
+                cmd.extend(['--link-limit', str(args.link_limit)])
+            if args.content_limit:
+                cmd.extend(['--content-limit', str(args.content_limit)])
+            if args.publish_limit:
+                cmd.extend(['--publish-limit', str(args.publish_limit)])
+            if args.status:
+                cmd.append('--dry-run')
+
+            print(f"🚀 启动GitHub Actions模式: {' '.join(cmd)}")
+            result = subprocess.run(cmd)
+            sys.exit(result.returncode)
+
         # 创建工作流管理器
         workflow_manager = WorkflowManager(args.config)
         

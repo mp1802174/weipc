@@ -86,7 +86,12 @@ class CFContentCrawler:
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-blink-features=AutomationControlled')
         options.add_argument(f'--user-agent={self.config.get("browser.user_agent")}')
-        
+
+        # 添加GitHub Actions专用的Chrome选项
+        chrome_options = self.config.get('browser.chrome_options', [])
+        for option in chrome_options:
+            options.add_argument(option)
+
         window_size = self.config.get('browser.window_size', [1920, 1080])
         options.add_argument(f'--window-size={window_size[0]},{window_size[1]}')
         
@@ -119,6 +124,12 @@ class CFContentCrawler:
         co.set_argument('--disable-dev-shm-usage')
         co.set_argument('--disable-blink-features=AutomationControlled')
         co.set_argument('--disable-extensions')
+
+        # 添加GitHub Actions专用的Chrome选项
+        chrome_options = self.config.get('browser.chrome_options', [])
+        for option in chrome_options:
+            co.set_argument(option)
+
         # 移除可能导致页面加载问题的选项
         # co.set_argument('--disable-images')
         # co.set_argument('--disable-javascript')

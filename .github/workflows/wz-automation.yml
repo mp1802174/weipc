@@ -1,0 +1,214 @@
+name: WZ Content Automation
+
+on:
+  # 定时触发 - 每6小时运行一次
+  schedule:
+    - cron: '0 */6 * * *'
+  
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      link_limit:
+        description: '链接采集限制'
+        required: false
+        default: '3'
+        type: string
+      content_limit:
+        description: '内容采集限制'
+        required: false
+        default: '50'
+        type: string
+      publish_limit:
+        description: '论坛发布限制'
+        required: false
+        default: '50'
+        type: string
+      steps:
+        description: '执行步骤 (link_crawl,content_crawl,forum_publish)'
+        required: false
+        default: 'link_crawl,content_crawl,forum_publish'
+        type: string
+
+env:
+  PYTHONPATH: ${{ github.workspace }}
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  wz-automation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: 安装系统依赖
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          wget \
+          gnupg \
+          unzip \
+          curl \
+          xvfb \
+          fonts-liberation \
+          libasound2 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libnss3
+          
+    - name: 安装Chrome浏览器
+      run: |
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+    - name: 安装ChromeDriver
+      run: |
+        CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
+        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
+        wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+        sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
+        sudo chmod +x /usr/local/bin/chromedriver
+        
+    - name: 安装Python依赖
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        else
+          # 安装核心依赖
+          pip install \
+            mysql-connector-python \
+            requests \
+            beautifulsoup4 \
+            lxml \
+            selenium \
+            DrissionPage \
+            trafilatura \
+            newspaper3k \
+            jieba \
+            python-dateutil \
+            Pillow
+        fi
+        
+    - name: 创建配置文件
+      run: |
+        mkdir -p wz/config
+        cat > wz/config/config.json << 'EOF'
+        {
+          "database": {
+            "host": "${{ secrets.DB_HOST }}",
+            "port": ${{ secrets.DB_PORT }},
+            "user": "${{ secrets.DB_USER }}",
+            "password": "${{ secrets.DB_PASSWORD }}",
+            "database": "${{ secrets.DB_NAME }}",
+            "charset": "utf8mb4"
+          },
+          "cfcj": {
+            "use_database": true,
+            "headless": true,
+            "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          },
+          "forum": {
+            "discuz": {
+              "host": "${{ secrets.FORUM_DB_HOST }}",
+              "port": ${{ secrets.FORUM_DB_PORT }},
+              "user": "${{ secrets.FORUM_DB_USER }}",
+              "password": "${{ secrets.FORUM_DB_PASSWORD }}",
+              "database": "${{ secrets.FORUM_DB_NAME }}",
+              "charset": "utf8mb4"
+            }
+          }
+        }
+        EOF
+        
+    - name: 创建GitHub Actions专用配置
+      run: |
+        cat > wz/github_actions_config.json << 'EOF'
+        {
+          "steps": {
+            "link_crawl": {
+              "enabled": true,
+              "params": {
+                "limit_per_account": ${{ github.event.inputs.link_limit || '3' }},
+                "total_limit": ${{ github.event.inputs.link_limit || '3' }},
+                "accounts": ["all"]
+              }
+            },
+            "content_crawl": {
+              "enabled": true,
+              "params": {
+                "limit": ${{ github.event.inputs.content_limit || '50' }},
+                "batch_size": 5,
+                "source_types": ["wechat"]
+              }
+            },
+            "forum_publish": {
+              "enabled": true,
+              "params": {
+                "limit": ${{ github.event.inputs.publish_limit || '50' }},
+                "interval_min": 30,
+                "interval_max": 60
+              }
+            }
+          }
+        }
+        EOF
+        
+    - name: 设置显示环境
+      run: |
+        export DISPLAY=:99
+        Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+        sleep 3
+        
+    - name: 运行WZ自动化工作流
+      run: |
+        cd wz
+        export DISPLAY=:99
+        
+        # 解析执行步骤
+        STEPS="${{ github.event.inputs.steps || 'link_crawl,content_crawl,forum_publish' }}"
+        
+        # 运行自动化工作流
+        if [ -f "github_actions_config.json" ]; then
+          python auto_workflow.py --config github_actions_config.json --steps "$STEPS"
+        else
+          python auto_workflow.py --steps "$STEPS"
+        fi
+        
+    - name: 上传执行日志
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: wz-automation-logs-${{ github.run_number }}
+        path: |
+          logs/
+          wz/logs/
+        retention-days: 7
+        
+    - name: 发送通知 (成功)
+      if: success()
+      run: |
+        echo "✅ WZ自动化工作流执行成功"
+        echo "执行时间: $(date)"
+        echo "执行步骤: ${{ github.event.inputs.steps || 'link_crawl,content_crawl,forum_publish' }}"
+        
+    - name: 发送通知 (失败)
+      if: failure()
+      run: |
+        echo "❌ WZ自动化工作流执行失败"
+        echo "执行时间: $(date)"
+        echo "请检查日志获取详细信息"

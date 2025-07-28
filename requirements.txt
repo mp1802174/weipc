@@ -1,0 +1,24 @@
+# WZ系统核心依赖
+mysql-connector-python>=8.0.33
+requests>=2.31.0
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+
+# 浏览器自动化
+selenium>=4.15.0
+undetected-chromedriver>=3.5.3
+DrissionPage>=4.0.0
+
+# 内容提取
+trafilatura>=1.6.3
+newspaper3k>=0.2.8
+jieba>=0.42.1
+
+# 工具库
+python-dateutil>=2.8.2
+Pillow>=10.0.0
+pathlib2>=2.3.7
+
+# 可选依赖（用于特定功能）
+# pandas>=2.0.0  # 数据处理
+# openpyxl>=3.1.0  # Excel支持
