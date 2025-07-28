@@ -58,7 +58,7 @@ jobs:
           curl \
           xvfb \
           fonts-liberation \
-          libasound2 \
+          libasound2t64 \
           libatk-bridge2.0-0 \
           libdrm2 \
           libxcomposite1 \
@@ -86,9 +86,13 @@ jobs:
     - name: 安装Python依赖
       run: |
         python -m pip install --upgrade pip
+        echo "📦 安装Python依赖包..."
+
         if [ -f requirements.txt ]; then
+          echo "使用requirements.txt安装依赖"
           pip install -r requirements.txt
         else
+          echo "使用默认依赖列表安装"
           # 安装核心依赖
           pip install \
             mysql-connector-python \
@@ -103,6 +107,9 @@ jobs:
             python-dateutil \
             Pillow
         fi
+
+        echo "✅ Python依赖安装完成"
+        pip list | grep -E "(mysql|selenium|DrissionPage|trafilatura)"
         
     - name: 创建配置文件
       env:
@@ -191,17 +198,32 @@ jobs:
         
     - name: 运行WZ自动化工作流
       run: |
+        # 创建日志目录
+        mkdir -p logs
+        mkdir -p wz/logs
+
         cd wz
         export DISPLAY=:99
-        
+
         # 解析执行步骤
         STEPS="${{ github.event.inputs.steps || 'link_crawl,content_crawl,forum_publish' }}"
-        
+
         # 运行自动化工作流
+        echo "🚀 开始执行WZ自动化工作流"
+        echo "执行步骤: $STEPS"
+
         if [ -f "github_actions_config.json" ]; then
-          python auto_workflow.py --config github_actions_config.json --steps "$STEPS"
+          python auto_workflow.py --config github_actions_config.json --steps "$STEPS" 2>&1 | tee ../logs/workflow_execution.log
         else
-          python auto_workflow.py --steps "$STEPS"
+          python auto_workflow.py --steps "$STEPS" 2>&1 | tee ../logs/workflow_execution.log
+        fi
+
+        # 检查执行结果
+        if [ ${PIPESTATUS[0]} -eq 0 ]; then
+          echo "✅ 工作流执行成功"
+        else
+          echo "❌ 工作流执行失败，退出码: ${PIPESTATUS[0]}"
+          exit 1
         fi
         
     - name: 上传执行日志
@@ -212,6 +234,7 @@ jobs:
         path: |
           logs/
           wz/logs/
+        if-no-files-found: warn
         retention-days: 7
         
     - name: 发送通知 (成功)
