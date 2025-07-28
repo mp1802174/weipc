@@ -179,6 +179,21 @@ jobs:
           }
         }
         EOF
+
+        # 创建WZZQ专用的配置文件
+        mkdir -p wz/config
+        cat > wz/config/config_manager.py << EOF
+        def get_database_config(config_name):
+            """为WZZQ模块提供数据库配置"""
+            return {
+                'host': '${DB_HOST}',
+                'port': ${DB_PORT},
+                'user': '${DB_USER}',
+                'password': '${DB_PASSWORD}',
+                'database': '${DB_NAME}',
+                'charset': 'utf8mb4'
+            }
+        EOF
         
     - name: 创建GitHub Actions专用配置
       run: |

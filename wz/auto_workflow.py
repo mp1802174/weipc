@@ -220,7 +220,6 @@ def main():
         if args.github_actions:
             # 使用GitHub Actions专用脚本
             import subprocess
-            import sys
 
             github_script = Path(__file__).parent / "github_auto_workflow.py"
             cmd = [sys.executable, str(github_script)]
