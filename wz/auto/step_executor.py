@@ -9,6 +9,8 @@ import sys
 import os
 import time
 import logging
+import subprocess
+import re
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -45,63 +47,85 @@ class StepExecutor:
         try:
             logger.info("开始执行链接采集...")
             
-            # 导入微信采集模块
-            try:
-                from wzzq.wechat_crawler import WeChatCrawler
-            except ImportError as e:
-                result['message'] = f'无法导入微信采集模块: {e}'
-                return result
+            # 使用与Web界面相同的方式调用微信采集脚本
             
             # 获取参数
             limit_per_account = params.get('limit_per_account', 10)
-            total_limit = params.get('total_limit', 50)
-            accounts = params.get('accounts', ['all'])
-            
-            # 如果是 'all'，获取所有配置的公众号
-            if 'all' in accounts:
-                accounts = ['舞林攻略指南', '人类砂舞行为研究', '砂砂之家']
-            
-            crawler = WeChatCrawler()
-            total_new = 0
-            account_results = {}
-            
-            for account in accounts:
-                if total_new >= total_limit:
-                    break
-                
-                logger.info(f"采集公众号: {account}")
-                
-                # 计算该账号的采集限制
-                remaining_limit = min(limit_per_account, total_limit - total_new)
-                
-                try:
-                    # 执行采集
-                    account_result = crawler.crawl_account(account, limit=remaining_limit)
-                    new_count = account_result.get('new_articles', 0)
-                    
-                    account_results[account] = {
-                        'new_articles': new_count,
-                        'total_articles': account_result.get('total_articles', 0),
-                        'success': True
+
+            # 构建命令行参数
+            script_path = Path(__file__).parent.parent / 'crawl_wechat.py'
+            cmd = [sys.executable, str(script_path), '--limit', str(limit_per_account)]
+
+            logger.info(f"执行微信采集命令: {' '.join(cmd)}")
+
+            try:
+                # 执行采集脚本
+                result_process = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    timeout=300  # 5分钟超时
+                )
+
+                if result_process.returncode == 0:
+                    # 解析输出获取采集数量
+                    output = result_process.stdout
+                    total_new = 0
+
+                    # 从输出中提取采集数量
+                    for line in output.split('\n'):
+                        if '成功保存' in line and '篇文章到数据库' in line:
+                            try:
+                                # 提取数字
+                                import re
+                                match = re.search(r'成功保存 (\d+) 篇文章到数据库', line)
+                                if match:
+                                    total_new = int(match.group(1))
+                                    break
+                            except:
+                                pass
+
+                    logger.info(f"微信链接采集成功，共获取 {total_new} 篇新文章")
+
+                    account_results = {
+                        'total_new_articles': total_new,
+                        'status': 'success',
+                        'output': output
                     }
-                    
-                    total_new += new_count
-                    logger.info(f"公众号 {account} 采集完成: 新增{new_count}篇")
-                    
-                except Exception as e:
-                    logger.error(f"采集公众号 {account} 失败: {e}")
-                    account_results[account] = {
-                        'new_articles': 0,
-                        'error': str(e),
-                        'success': False
+
+                else:
+                    error_msg = result_process.stderr or result_process.stdout
+                    logger.error(f"微信采集脚本执行失败: {error_msg}")
+                    account_results = {
+                        'total_new_articles': 0,
+                        'status': 'failed',
+                        'error': error_msg
                     }
+                    total_new = 0
+
+            except subprocess.TimeoutExpired:
+                logger.error("微信采集脚本执行超时")
+                account_results = {
+                    'total_new_articles': 0,
+                    'status': 'failed',
+                    'error': '执行超时'
+                }
+                total_new = 0
+            except Exception as e:
+                logger.error(f"执行微信采集脚本失败: {e}")
+                account_results = {
+                    'total_new_articles': 0,
+                    'status': 'failed',
+                    'error': str(e)
+                }
+                total_new = 0
             
             result['success'] = True
             result['message'] = f'链接采集完成，共获取{total_new}篇新文章'
             result['new_articles'] = total_new
             result['details'] = {
                 'accounts': account_results,
-                'total_limit': total_limit,
                 'limit_per_account': limit_per_account
             }
             
@@ -146,24 +170,30 @@ class StepExecutor:
             crawler = IntegratedCrawler()
             
             # 执行内容采集
-            crawl_result = crawler.crawl_content(
+            crawl_result = crawler.batch_crawl(
+                source_type='wechat' if 'wechat' in source_types else None,
                 limit=limit,
-                batch_size=batch_size,
-                source_types=source_types
+                batch_size=batch_size
             )
             
-            if crawl_result.get('success', False):
+            # 判断采集是否成功（基于实际处理的文章数量）
+            total_processed = crawl_result.get('total_processed', 0)
+            successful = crawl_result.get('successful', 0)
+            failed = crawl_result.get('failed', 0)
+
+            if 'error' not in crawl_result:
                 result['success'] = True
-                result['message'] = f'内容采集完成，处理{crawl_result.get("processed", 0)}篇文章'
-                result['processed_articles'] = crawl_result.get('processed', 0)
+                result['message'] = f'内容采集完成，处理{total_processed}篇文章，成功{successful}篇，失败{failed}篇'
+                result['processed_articles'] = total_processed
                 result['details'] = {
-                    'successful': crawl_result.get('successful', 0),
-                    'failed': crawl_result.get('failed', 0),
+                    'successful': successful,
+                    'failed': failed,
+                    'total_processed': total_processed,
                     'limit': limit,
                     'batch_size': batch_size
                 }
             else:
-                result['message'] = f'内容采集失败: {crawl_result.get("message", "未知错误")}'
+                result['message'] = f'内容采集失败: {crawl_result.get("error", "未知错误")}'
             
         except Exception as e:
             logger.error(f"内容采集执行失败: {e}")

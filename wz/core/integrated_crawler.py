@@ -121,7 +121,7 @@ class IntegratedCrawler:
                    word_count, images, crawled_at, fetched_at
             FROM wechat_articles
             WHERE (crawl_status = 0 OR crawl_status IS NULL OR content IS NULL OR content = '')
-            ORDER BY publish_timestamp DESC
+            ORDER BY id ASC
             LIMIT %s
             """
 

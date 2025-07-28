@@ -108,23 +108,36 @@ class CFCJAPI:
             article_data = self.multi_site_extractor.extract_article(html_content, url)
 
             # 保存到数据库
+            db_result = None
             if self.use_database and self.db_manager:
                 try:
-                    self.db_manager.save_article_content(article_data)
+                    db_result = self.db_manager.save_article_content(article_data)
                     self.logger.info("文章已保存到数据库")
                 except Exception as e:
                     self.logger.error(f"保存到数据库失败: {e}")
 
-            # 简化返回结果，只保留核心字段
-            core_result = {
-                "url": article_data.get('url', url),
-                "title": article_data.get('title', ''),
-                "content": article_data.get('content', ''),
-                "author": article_data.get('author', ''),
-                "publish_time": article_data.get('publish_time', ''),
-                "word_count": article_data.get('word_count', 0),
-                "site_name": article_data.get('site_name', '')
-            }
+            # 如果数据库返回了文章信息（已存在的文章），使用数据库的信息
+            if isinstance(db_result, dict) and db_result.get('status') == 'already_exists':
+                core_result = {
+                    "url": db_result.get('url', url),
+                    "title": db_result.get('title', ''),
+                    "content": db_result.get('content', ''),
+                    "author": article_data.get('author', ''),
+                    "publish_time": article_data.get('publish_time', ''),
+                    "word_count": db_result.get('word_count', 0),
+                    "site_name": article_data.get('site_name', '')
+                }
+            else:
+                # 使用新采集的数据
+                core_result = {
+                    "url": article_data.get('url', url),
+                    "title": article_data.get('title', ''),
+                    "content": article_data.get('content', ''),
+                    "author": article_data.get('author', ''),
+                    "publish_time": article_data.get('publish_time', ''),
+                    "word_count": article_data.get('word_count', 0),
+                    "site_name": article_data.get('site_name', '')
+                }
 
             self.logger.info(f"文章采集成功: {core_result.get('title', 'Unknown')}")
             return core_result

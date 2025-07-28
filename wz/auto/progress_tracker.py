@@ -10,7 +10,7 @@ import os
 import time
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Any
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 logger = logging.getLogger(__name__)

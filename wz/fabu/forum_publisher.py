@@ -174,8 +174,12 @@ class ForumPublisher:
             
             sql = """
             SELECT id, title, account_name, publish_timestamp
-            FROM wechat_articles 
+            FROM wechat_articles
             WHERE forum_published IS NULL
+            AND crawl_status = 1
+            AND content IS NOT NULL
+            AND content != ''
+            AND LENGTH(content) > 50
             ORDER BY publish_timestamp DESC
             LIMIT %s
             """

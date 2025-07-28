@@ -22,20 +22,25 @@ logger = logging.getLogger(__name__)
 class WorkflowManager:
     """工作流管理器"""
     
-    def __init__(self, config_file: str = "auto_workflow_config.json"):
+    def __init__(self, config_file: str = None):
         """
         初始化工作流管理器
-        
+
         Args:
             config_file: 配置文件路径
         """
+        if config_file is None:
+            # 获取当前文件所在目录的父目录
+            current_dir = Path(__file__).parent.parent
+            config_file = current_dir / "auto_workflow_config.json"
+
         self.config_file = Path(config_file)
         self.config = self._load_config()
-        
+
         self.status_checker = StatusChecker()
         self.step_executor = StepExecutor()
         self.progress_tracker = ProgressTracker()
-        
+
         self.interrupted = False
         self.current_execution_id = None
         
@@ -63,8 +68,8 @@ class WorkflowManager:
                     "timeout": 600,
                     "retry_count": 2,
                     "params": {
-                        "limit_per_account": 10,
-                        "total_limit": 50,
+                        "limit_per_account": 3,
+                        "total_limit": 3,
                         "accounts": ["all"]
                     }
                 },
@@ -82,9 +87,9 @@ class WorkflowManager:
                     "timeout": 3600,
                     "retry_count": 1,
                     "params": {
-                        "limit": 100,
-                        "interval_min": 60,
-                        "interval_max": 120
+                        "limit": 50,
+                        "interval_min": 10,
+                        "interval_max": 20
                     }
                 }
             }
@@ -172,8 +177,9 @@ class WorkflowManager:
                                                            reason='步骤已禁用')
                     continue
                 
-                # 检查是否需要执行
-                step_status = overall_status['steps'].get(step_name, {})
+                # 重新检查步骤状态（因为前面的步骤可能改变了状态）
+                current_status = self.status_checker.get_overall_status(self.config)
+                step_status = current_status['steps'].get(step_name, {})
                 if not step_status.get('should_execute', False):
                     logger.info(f"步骤无需执行，跳过: {step_name} - {step_status.get('reason', '')}")
                     self.progress_tracker.update_step_status(step_name, 'skipped',

@@ -153,9 +153,22 @@ class CFCJDatabaseManager(BaseDBManager):
                 article_id = existing['id'] if isinstance(existing, dict) else existing[0]
                 crawl_status = existing['crawl_status'] if isinstance(existing, dict) else existing[1]
                 
-                # 如果已经采集过且有内容，可以选择跳过或更新
+                # 如果已经采集过且有内容，返回已有的文章信息
                 if crawl_status == 1:
                     self.logger.info(f"文章已采集过，跳过: {url}")
+                    # 获取已有文章的详细信息
+                    select_sql = "SELECT title, content, word_count FROM wechat_articles WHERE id = %s"
+                    self.cursor.execute(select_sql, (article_id,))
+                    article_info = self.cursor.fetchone()
+
+                    if article_info:
+                        return {
+                            'title': article_info[0] or title,
+                            'content': article_info[1] or content,
+                            'word_count': article_info[2] or word_count,
+                            'url': url,
+                            'status': 'already_exists'
+                        }
                     return True
                 
                 update_sql = """

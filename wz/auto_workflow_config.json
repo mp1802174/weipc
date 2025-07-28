@@ -10,8 +10,8 @@
       "timeout": 600,
       "retry_count": 2,
       "params": {
-        "limit_per_account": 10,
-        "total_limit": 50,
+        "limit_per_account": 3,
+        "total_limit": 3,
         "accounts": ["all"],
         "skip_existing": true
       }
@@ -21,8 +21,8 @@
       "timeout": 1800,
       "retry_count": 1,
       "params": {
-        "limit": 50,
-        "batch_size": 5,
+        "limit": 3,
+        "batch_size": 3,
         "source_types": ["wechat"]
       }
     },
@@ -31,9 +31,9 @@
       "timeout": 3600,
       "retry_count": 1,
       "params": {
-        "limit": 100,
-        "interval_min": 60,
-        "interval_max": 120
+        "limit": 3,
+        "interval_min": 10,
+        "interval_max": 20
       }
     }
   },

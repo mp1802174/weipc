@@ -160,11 +160,11 @@ class StatusChecker:
             conn = mysql.connector.connect(**self.wz_config)
             cursor = conn.cursor(dictionary=True)
             
-            # 查询待采集内容的文章
+            # 查询待采集内容的文章（crawl_status = 0 表示未采集内容）
             cursor.execute("""
                 SELECT COUNT(*) as count
-                FROM wechat_articles 
-                WHERE (content IS NULL OR content = '') 
+                FROM wechat_articles
+                WHERE crawl_status = 0
                 AND article_url IS NOT NULL
             """)
             
