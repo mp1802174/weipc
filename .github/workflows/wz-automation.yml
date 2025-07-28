@@ -193,6 +193,31 @@ jobs:
                 'database': '${DB_NAME}',
                 'charset': 'utf8mb4'
             }
+
+        def get_forum_config(config_name):
+            """为论坛模块提供数据库配置"""
+            return {
+                'host': '${FORUM_DB_HOST}',
+                'port': ${FORUM_DB_PORT},
+                'user': '${FORUM_DB_USER}',
+                'password': '${FORUM_DB_PASSWORD}',
+                'database': '${FORUM_DB_NAME}',
+                'charset': 'utf8mb4'
+            }
+
+        def get_config():
+            """获取完整配置"""
+            return {
+                'database': get_database_config('wz_database'),
+                'forum': {
+                    'discuz': get_forum_config('discuz_forum')
+                },
+                'cfcj': {
+                    'use_database': True,
+                    'headless': True,
+                    'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
         EOF
         
     - name: 创建GitHub Actions专用配置
