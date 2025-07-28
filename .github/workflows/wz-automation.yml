@@ -56,6 +56,7 @@ jobs:
           gnupg \
           unzip \
           curl \
+          jq \
           xvfb \
           fonts-liberation \
           libasound2t64 \
@@ -77,11 +78,37 @@ jobs:
         
     - name: 安装ChromeDriver
       run: |
-        CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
-        wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-        sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
+        # 获取Chrome版本
+        CHROME_VERSION=$(google-chrome --version | cut -d " " -f3)
+        echo "检测到Chrome版本: $CHROME_VERSION"
+
+        # 获取主版本号
+        CHROME_MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d "." -f1)
+        echo "Chrome主版本号: $CHROME_MAJOR_VERSION"
+
+        # 使用简化的下载方式
+        echo "使用Chrome for Testing下载ChromeDriver"
+
+        # 直接使用最新稳定版ChromeDriver
+        CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json" | grep -o '"Stable":{"version":"[^"]*"' | cut -d'"' -f4)
+
+        if [ -z "$CHROMEDRIVER_VERSION" ]; then
+          echo "获取最新版本失败，使用固定版本"
+          CHROMEDRIVER_VERSION="131.0.6778.87"
+        fi
+
+        echo "下载ChromeDriver版本: $CHROMEDRIVER_VERSION"
+
+        # 下载ChromeDriver
+        wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"
+
+        # 解压并安装
+        sudo unzip /tmp/chromedriver.zip -d /tmp/
+        sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
         sudo chmod +x /usr/local/bin/chromedriver
+
+        echo "✅ ChromeDriver安装完成"
+        chromedriver --version
         
     - name: 安装Python依赖
       run: |
