@@ -228,7 +228,24 @@ class MultiSiteAuthManager:
     def save_cookies_from_page(self, driver_or_page: Union[WebDriver, Any]) -> None:
         """保存页面cookies"""
         self.auth_manager.save_cookies_from_page(driver_or_page)
-    
+
     def load_cookies_to_page(self, driver_or_page: Union[WebDriver, Any], domain: str) -> None:
         """加载cookies到页面"""
         self.auth_manager.load_cookies_to_page(driver_or_page, domain)
+
+    def save_cookies_from_driver(self, driver: WebDriver) -> None:
+        """保存驱动器cookies（兼容方法）"""
+        self.auth_manager.save_cookies_from_page(driver)
+
+    def load_cookies_to_driver(self, driver: WebDriver, domain: str = None) -> None:
+        """加载cookies到驱动器（兼容方法）"""
+        if domain is None:
+            # 尝试从当前URL获取域名
+            try:
+                from urllib.parse import urlparse
+                current_url = driver.current_url
+                domain = urlparse(current_url).netloc
+            except:
+                domain = "mp.weixin.qq.com"  # 默认域名
+
+        self.auth_manager.load_cookies_to_page(driver, domain)
