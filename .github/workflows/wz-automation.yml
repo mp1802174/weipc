@@ -105,16 +105,27 @@ jobs:
         fi
         
     - name: 创建配置文件
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        FORUM_DB_HOST: ${{ secrets.FORUM_DB_HOST }}
+        FORUM_DB_PORT: ${{ secrets.FORUM_DB_PORT }}
+        FORUM_DB_USER: ${{ secrets.FORUM_DB_USER }}
+        FORUM_DB_PASSWORD: ${{ secrets.FORUM_DB_PASSWORD }}
+        FORUM_DB_NAME: ${{ secrets.FORUM_DB_NAME }}
       run: |
         mkdir -p wz/config
-        cat > wz/config/config.json << 'EOF'
+        cat > wz/config/config.json << EOF
         {
           "database": {
-            "host": "${{ secrets.DB_HOST }}",
-            "port": ${{ secrets.DB_PORT }},
-            "user": "${{ secrets.DB_USER }}",
-            "password": "${{ secrets.DB_PASSWORD }}",
-            "database": "${{ secrets.DB_NAME }}",
+            "host": "${DB_HOST}",
+            "port": ${DB_PORT},
+            "user": "${DB_USER}",
+            "password": "${DB_PASSWORD}",
+            "database": "${DB_NAME}",
             "charset": "utf8mb4"
           },
           "cfcj": {
@@ -124,11 +135,11 @@ jobs:
           },
           "forum": {
             "discuz": {
-              "host": "${{ secrets.FORUM_DB_HOST }}",
-              "port": ${{ secrets.FORUM_DB_PORT }},
-              "user": "${{ secrets.FORUM_DB_USER }}",
-              "password": "${{ secrets.FORUM_DB_PASSWORD }}",
-              "database": "${{ secrets.FORUM_DB_NAME }}",
+              "host": "${FORUM_DB_HOST}",
+              "port": ${FORUM_DB_PORT},
+              "user": "${FORUM_DB_USER}",
+              "password": "${FORUM_DB_PASSWORD}",
+              "database": "${FORUM_DB_NAME}",
               "charset": "utf8mb4"
             }
           }
@@ -137,21 +148,25 @@ jobs:
         
     - name: 创建GitHub Actions专用配置
       run: |
-        cat > wz/github_actions_config.json << 'EOF'
+        LINK_LIMIT="${{ github.event.inputs.link_limit || '3' }}"
+        CONTENT_LIMIT="${{ github.event.inputs.content_limit || '50' }}"
+        PUBLISH_LIMIT="${{ github.event.inputs.publish_limit || '50' }}"
+
+        cat > wz/github_actions_config.json << EOF
         {
           "steps": {
             "link_crawl": {
               "enabled": true,
               "params": {
-                "limit_per_account": ${{ github.event.inputs.link_limit || '3' }},
-                "total_limit": ${{ github.event.inputs.link_limit || '3' }},
+                "limit_per_account": ${LINK_LIMIT},
+                "total_limit": ${LINK_LIMIT},
                 "accounts": ["all"]
               }
             },
             "content_crawl": {
               "enabled": true,
               "params": {
-                "limit": ${{ github.event.inputs.content_limit || '50' }},
+                "limit": ${CONTENT_LIMIT},
                 "batch_size": 5,
                 "source_types": ["wechat"]
               }
@@ -159,7 +174,7 @@ jobs:
             "forum_publish": {
               "enabled": true,
               "params": {
-                "limit": ${{ github.event.inputs.publish_limit || '50' }},
+                "limit": ${PUBLISH_LIMIT},
                 "interval_min": 30,
                 "interval_max": 60
               }
@@ -191,7 +206,7 @@ jobs:
         
     - name: 上传执行日志
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wz-automation-logs-${{ github.run_number }}
         path: |
