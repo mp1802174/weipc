@@ -27,7 +27,7 @@ class StatusChecker:
             # 从配置文件加载数据库配置
             self.wz_config = get_database_config('wz_database')
             self.discuz_config = get_database_config('discuz_database')
-            self.forum_config = get_forum_config()
+            self.forum_config = get_forum_config('discuz_forum')
         except Exception as e:
             logger.warning(f"无法加载配置文件，使用默认配置: {e}")
             # 使用默认配置作为备用
@@ -88,27 +88,55 @@ class StatusChecker:
             account_details = {}
             
             for account in accounts:
-                # 检查该公众号最近的采集情况
+                # 检查该公众号的采集情况
                 cursor.execute("""
-                    SELECT COUNT(*) as count, MAX(fetched_at) as last_fetch
-                    FROM wechat_articles 
-                    WHERE account_name = %s AND fetched_at >= %s
-                """, (account, datetime.now() - timedelta(hours=24)))
-                
+                    SELECT MAX(fetched_at) as last_fetch_time,
+                           COUNT(*) as total_articles
+                    FROM wechat_articles
+                    WHERE account_name = %s
+                """, (account,))
+
                 account_info = cursor.fetchone()
-                recent_count = account_info['count'] if account_info else 0
-                last_fetch = account_info['last_fetch'] if account_info else None
-                
-                # 估算可能的新文章数量
-                limit_per_account = config.get('limit_per_account', 10)
-                estimated_new = min(limit_per_account, max(0, limit_per_account - recent_count))
-                
+                last_fetch_time = account_info['last_fetch_time'] if account_info else None
+                total_articles = account_info['total_articles'] if account_info else 0
+
+                # 简化判断逻辑：每天执行一次，就尝试采集
+                limit_per_account = config.get('limit_per_account', 3)
+                current_time = datetime.now()
+
+                # 判断是否需要采集
+                should_crawl = False
+                reason = ""
+
+                if total_articles == 0:
+                    # 从未采集过该公众号
+                    should_crawl = True
+                    reason = "首次采集该公众号"
+                elif last_fetch_time is None:
+                    # 没有采集时间记录
+                    should_crawl = True
+                    reason = "无采集记录，需要采集"
+                else:
+                    # 检查距离上次采集的时间
+                    time_since_last_fetch = current_time - last_fetch_time
+                    hours_since_last = time_since_last_fetch.total_seconds() / 3600
+
+                    if hours_since_last >= 12:  # 超过12小时就尝试采集
+                        should_crawl = True
+                        reason = f"距离上次采集已过{hours_since_last:.1f}小时，尝试获取新文章"
+                    else:
+                        should_crawl = False
+                        reason = f"距离上次采集仅{hours_since_last:.1f}小时，暂不采集"
+
+                estimated_new = limit_per_account if should_crawl else 0
+
                 account_details[account] = {
-                    'recent_articles': recent_count,
-                    'last_fetch': last_fetch.isoformat() if last_fetch else None,
-                    'estimated_new': estimated_new
+                    'total_articles': total_articles,
+                    'last_fetch_time': last_fetch_time.isoformat() if last_fetch_time else None,
+                    'estimated_new': estimated_new,
+                    'reason': reason
                 }
-                
+
                 total_estimated += estimated_new
             
             # 检查总数限制
@@ -119,10 +147,10 @@ class StatusChecker:
             # 决定是否执行
             if total_estimated > 0:
                 result['should_execute'] = True
-                result['reason'] = f'预计可采集{total_estimated}篇新文章'
+                result['reason'] = f'有{len([a for a in account_details.values() if a["estimated_new"] > 0])}个公众号需要检查新文章，预计最多采集{total_estimated}篇'
             else:
                 result['should_execute'] = False
-                result['reason'] = '最近24小时内已采集足够文章，暂不需要采集'
+                result['reason'] = '所有公众号都是最近12小时内采集过的，暂不需要重复采集'
             
             result['estimated_new_articles'] = total_estimated
             result['details'] = {
