@@ -100,35 +100,23 @@ class StatusChecker:
                 last_fetch_time = account_info['last_fetch_time'] if account_info else None
                 total_articles = account_info['total_articles'] if account_info else 0
 
-                # 简化判断逻辑：每天执行一次，就尝试采集
+                # 新逻辑：每天都尝试采集，让数据库去重处理重复文章
                 limit_per_account = config.get('limit_per_account', 3)
-                current_time = datetime.now()
 
-                # 判断是否需要采集
-                should_crawl = False
-                reason = ""
+                # 每天都尝试采集新文章
+                should_crawl = True
+                estimated_new = limit_per_account
 
                 if total_articles == 0:
-                    # 从未采集过该公众号
-                    should_crawl = True
                     reason = "首次采集该公众号"
                 elif last_fetch_time is None:
-                    # 没有采集时间记录
-                    should_crawl = True
-                    reason = "无采集记录，需要采集"
+                    reason = "无采集记录，尝试采集"
                 else:
-                    # 检查距离上次采集的时间
+                    # 显示上次采集时间，但仍然尝试采集
+                    current_time = datetime.now()
                     time_since_last_fetch = current_time - last_fetch_time
                     hours_since_last = time_since_last_fetch.total_seconds() / 3600
-
-                    if hours_since_last >= 12:  # 超过12小时就尝试采集
-                        should_crawl = True
-                        reason = f"距离上次采集已过{hours_since_last:.1f}小时，尝试获取新文章"
-                    else:
-                        should_crawl = False
-                        reason = f"距离上次采集仅{hours_since_last:.1f}小时，暂不采集"
-
-                estimated_new = limit_per_account if should_crawl else 0
+                    reason = f"上次采集：{hours_since_last:.1f}小时前，尝试获取新文章"
 
                 account_details[account] = {
                     'total_articles': total_articles,
@@ -144,13 +132,15 @@ class StatusChecker:
             if total_estimated > total_limit:
                 total_estimated = total_limit
             
-            # 决定是否执行
+            # 决定是否执行 - 现在总是尝试采集
             if total_estimated > 0:
                 result['should_execute'] = True
-                result['reason'] = f'有{len([a for a in account_details.values() if a["estimated_new"] > 0])}个公众号需要检查新文章，预计最多采集{total_estimated}篇'
+                active_accounts = len([a for a in account_details.values() if a["estimated_new"] > 0])
+                result['reason'] = f'检查{active_accounts}个公众号的新文章，预计最多采集{total_estimated}篇（重复文章将自动跳过）'
             else:
+                # 这种情况理论上不会发生，因为现在总是尝试采集
                 result['should_execute'] = False
-                result['reason'] = '所有公众号都是最近12小时内采集过的，暂不需要重复采集'
+                result['reason'] = '配置错误：没有公众号需要采集'
             
             result['estimated_new_articles'] = total_estimated
             result['details'] = {
